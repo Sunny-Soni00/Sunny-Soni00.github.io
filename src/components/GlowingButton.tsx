@@ -6,13 +6,15 @@ interface GlowingButtonProps {
   color?: 'cyan' | 'pink' | 'purple';
   className?: string;
   onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 const GlowingButton = ({ 
   children, 
   color = 'cyan', 
   className = '',
-  onClick
+  onClick,
+  type = 'button'
 }: GlowingButtonProps) => {
   
   const colorStyles = {
@@ -23,6 +25,7 @@ const GlowingButton = ({
   
   return (
     <button
+      type={type}
       onClick={onClick}
       className={`px-5 py-2 rounded-full bg-black/40 border 
       transition-all duration-300 text-white hover:bg-black/60

@@ -42,10 +42,7 @@
 
   body {
     @apply bg-cosmic text-foreground;
-    background-image: url('/lovable-uploads/2e6eb633-039f-4b1f-9f20-9b910802c066.png');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-color: #060f1f; /* Replace background-image with a dark color */
   }
 
   /* Galaxy theme custom classes */
