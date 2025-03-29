@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import GlassCard from './GlassCard';
 import GlowingButton from './GlowingButton';
-import { User, Key, LogIn } from 'lucide-react';
+import { User, Key, LogIn, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLogin = () => {
   const { login } = useAuth();
+  const [name, setName] = useState('');
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,8 +16,8 @@ const AdminLogin = () => {
     e.preventDefault();
     setError('');
     
-    if (!userId || !password) {
-      setError('Please enter both user ID and password');
+    if (!name || !userId || !password) {
+      setError('Please enter name, user ID and password');
       return;
     }
     
@@ -41,6 +42,22 @@ const AdminLogin = () => {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 flex items-center">
+              <UserCircle className="w-4 h-4 mr-2 text-neon-blue" />
+              Name
+            </label>
+            <input 
+              type="text" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
+              focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
+              required
+              placeholder="Enter your name"
+            />
+          </div>
+          
           <div>
             <label className="block text-sm font-medium mb-1 flex items-center">
               <User className="w-4 h-4 mr-2 text-neon-blue" />

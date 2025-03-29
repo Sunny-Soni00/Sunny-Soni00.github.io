@@ -12,7 +12,7 @@ import Resources from './pages/Resources';
 import Reviews from './pages/Reviews';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
-import UserDetailsForm from './components/UserDetailsForm';
+import UserLogin from './components/UserLogin';
 import AdminLogin from './components/AdminLogin';
 
 import './App.css';
@@ -20,7 +20,7 @@ import './App.css';
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
-  const { showUserDetailsForm, isAuthenticated, userRole } = useAuth();
+  const { showUserLogin, isAuthenticated, userRole } = useAuth();
   
   return (
     <>
@@ -34,8 +34,8 @@ const AppRoutes = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       
-      {/* User Details Form for First Visit */}
-      {showUserDetailsForm && <UserDetailsForm />}
+      {/* User Login Modal */}
+      {showUserLogin && <UserLogin />}
       
       {/* Admin Login Modal */}
       {userRole === 'admin' && !isAuthenticated && window.location.pathname === "/admin" && (

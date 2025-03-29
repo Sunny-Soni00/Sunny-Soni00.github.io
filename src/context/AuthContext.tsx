@@ -14,8 +14,8 @@ interface AuthContextType {
   logout: () => void;
   userDetails: UserDetails | null;
   setUserDetails: (details: Omit<UserDetails, 'id'>) => void;
-  showUserDetailsForm: boolean;
-  setShowUserDetailsForm: (show: boolean) => void;
+  showUserLogin: boolean;
+  setShowUserLogin: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [userDetails, setUserDetailsState] = useState<UserDetails | null>(null);
-  const [showUserDetailsForm, setShowUserDetailsForm] = useState<boolean>(false);
+  const [showUserLogin, setShowUserLogin] = useState<boolean>(false);
 
   // Load auth state from localStorage on initial render
   useEffect(() => {
@@ -46,12 +46,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (userDetails) {
         setUserDetailsState(userDetails);
       } else {
-        // If user details are not found, show the form
-        setShowUserDetailsForm(true);
+        // If user details are not found, show the user login
+        setShowUserLogin(true);
       }
     } else {
-      // If no user details are saved, show the form on first visit
-      setShowUserDetailsForm(true);
+      // If no user details are saved, show the user login on first visit
+      setShowUserLogin(true);
     }
   }, []);
 
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const saveUserDetails = (details: Omit<UserDetails, 'id'>) => {
     const savedDetails = dataService.addUserDetails(details);
     setUserDetailsState(savedDetails);
-    setShowUserDetailsForm(false);
+    setShowUserLogin(false);
     toast.success('User details saved');
   };
 
@@ -105,8 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       userDetails,
       setUserDetails: saveUserDetails,
-      showUserDetailsForm,
-      setShowUserDetailsForm
+      showUserLogin,
+      setShowUserLogin
     }}>
       {children}
     </AuthContext.Provider>
