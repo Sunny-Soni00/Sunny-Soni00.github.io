@@ -1,5 +1,5 @@
 
-import { Project, Resource, Review, AboutContent } from '../models/DataModels';
+import { Project, Resource, Review, AboutContent, Attachment, UserDetails } from '../models/DataModels';
 
 // Initial Projects Data
 const initialProjects: Project[] = [
@@ -207,6 +207,7 @@ const PROJECTS_STORAGE_KEY = 'cosmicApp_projects';
 const RESOURCES_STORAGE_KEY = 'cosmicApp_resources';
 const REVIEWS_STORAGE_KEY = 'cosmicApp_reviews';
 const ABOUT_STORAGE_KEY = 'cosmicApp_about';
+const USER_DETAILS_STORAGE_KEY = 'cosmicApp_userDetails';
 
 // Helper to initialize data from localStorage or defaults
 const initializeData = <T>(storageKey: string, initialData: T): T => {
@@ -228,12 +229,32 @@ class DataService {
   private resources: Resource[];
   private reviews: Review[];
   private aboutContent: AboutContent;
+  private userDetails: UserDetails[];
 
   constructor() {
     this.projects = initializeData<Project[]>(PROJECTS_STORAGE_KEY, initialProjects);
     this.resources = initializeData<Resource[]>(RESOURCES_STORAGE_KEY, initialResources);
     this.reviews = initializeData<Review[]>(REVIEWS_STORAGE_KEY, initialReviews);
     this.aboutContent = initializeData<AboutContent>(ABOUT_STORAGE_KEY, initialAboutContent);
+    this.userDetails = initializeData<UserDetails[]>(USER_DETAILS_STORAGE_KEY, []);
+    
+    // Update older projects that might not have attachments array
+    this.projects = this.projects.map(project => {
+      if (project.attachmentUrl && !project.attachments) {
+        return {
+          ...project,
+          attachments: [{
+            id: Date.now().toString(),
+            name: 'Attachment',
+            url: project.attachmentUrl,
+            type: project.attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'document'
+          }]
+        };
+      }
+      return project;
+    });
+    
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
   }
 
   // Projects Methods
@@ -276,6 +297,39 @@ class DataService {
     return this.projects.length < initialLength;
   }
 
+  // Projects Attachments Methods
+  addProjectAttachment(projectId: string, attachment: Omit<Attachment, 'id'>): Attachment | null {
+    const project = this.getProjectById(projectId);
+    if (!project) return null;
+    
+    const newAttachment = {
+      ...attachment,
+      id: Date.now().toString()
+    };
+    
+    const attachments = project.attachments || [];
+    const updatedProject = {
+      ...project,
+      attachments: [...attachments, newAttachment]
+    };
+    
+    this.updateProject(projectId, updatedProject);
+    return newAttachment;
+  }
+  
+  deleteProjectAttachment(projectId: string, attachmentId: string): boolean {
+    const project = this.getProjectById(projectId);
+    if (!project || !project.attachments) return false;
+    
+    const initialCount = project.attachments.length;
+    const updatedAttachments = project.attachments.filter(a => a.id !== attachmentId);
+    
+    if (initialCount === updatedAttachments.length) return false;
+    
+    this.updateProject(projectId, { attachments: updatedAttachments });
+    return true;
+  }
+
   // Resources Methods
   getAllResources(): Resource[] {
     return [...this.resources];
@@ -315,6 +369,39 @@ class DataService {
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
     return this.resources.length < initialLength;
   }
+  
+  // Resource Attachments Methods
+  addResourceAttachment(resourceId: string, attachment: Omit<Attachment, 'id'>): Attachment | null {
+    const resource = this.getResourceById(resourceId);
+    if (!resource) return null;
+    
+    const newAttachment = {
+      ...attachment,
+      id: Date.now().toString()
+    };
+    
+    const attachments = resource.attachments || [];
+    const updatedResource = {
+      ...resource,
+      attachments: [...attachments, newAttachment]
+    };
+    
+    this.updateResource(resourceId, updatedResource);
+    return newAttachment;
+  }
+  
+  deleteResourceAttachment(resourceId: string, attachmentId: string): boolean {
+    const resource = this.getResourceById(resourceId);
+    if (!resource || !resource.attachments) return false;
+    
+    const initialCount = resource.attachments.length;
+    const updatedAttachments = resource.attachments.filter(a => a.id !== attachmentId);
+    
+    if (initialCount === updatedAttachments.length) return false;
+    
+    this.updateResource(resourceId, { attachments: updatedAttachments });
+    return true;
+  }
 
   // Reviews Methods
   getAllReviews(): Review[] {
@@ -331,6 +418,20 @@ class DataService {
     this.reviews = [...this.reviews, newReview];
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
     return newReview;
+  }
+  
+  updateReview(id: string, review: Partial<Review>): Review | undefined {
+    const index = this.reviews.findIndex(r => r.id === id);
+    if (index === -1) return undefined;
+
+    const updatedReview = { ...this.reviews[index], ...review };
+    this.reviews = [
+      ...this.reviews.slice(0, index),
+      updatedReview,
+      ...this.reviews.slice(index + 1)
+    ];
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    return updatedReview;
   }
 
   deleteReview(id: string): boolean {
@@ -350,6 +451,33 @@ class DataService {
     localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(this.aboutContent));
     return this.aboutContent;
   }
+  
+  // User Details Methods
+  getAllUserDetails(): UserDetails[] {
+    return [...this.userDetails];
+  }
+  
+  addUserDetails(details: Omit<UserDetails, 'id'>): UserDetails {
+    const newUserDetails = {
+      ...details,
+      id: Date.now().toString(),
+    };
+    
+    this.userDetails = [...this.userDetails, newUserDetails];
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    return newUserDetails;
+  }
+  
+  getUserDetailsById(id: string): UserDetails | undefined {
+    return this.userDetails.find(user => user.id === id);
+  }
+  
+  deleteUserDetails(id: string): boolean {
+    const initialLength = this.userDetails.length;
+    this.userDetails = this.userDetails.filter(u => u.id !== id);
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    return this.userDetails.length < initialLength;
+  }
 
   // Reset data to initial values (for testing)
   resetData(): void {
@@ -357,11 +485,13 @@ class DataService {
     this.resources = [...initialResources];
     this.reviews = [...initialReviews];
     this.aboutContent = { ...initialAboutContent };
+    this.userDetails = [];
     
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
     localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(this.aboutContent));
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
   }
 }
 

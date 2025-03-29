@@ -4,7 +4,7 @@ import GlassCard from './GlassCard';
 import GlowingButton from './GlowingButton';
 import { User, Mail, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { UserDetails } from '../models/DataModels';
+import { toast } from 'sonner';
 
 const UserDetailsForm = () => {
   const { setUserDetails } = useAuth();
@@ -14,15 +14,17 @@ const UserDetailsForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email) return;
+    if (!name || !email) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
     
-    const userDetails: UserDetails = {
+    // The id will be added by the DataService
+    setUserDetails({
       name,
       email,
       visitDate: new Date().toISOString()
-    };
-    
-    setUserDetails(userDetails);
+    });
   };
 
   return (

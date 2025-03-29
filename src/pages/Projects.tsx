@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
-import { Code, ExternalLink, Github, Star, Filter, Edit, Trash2, Plus, Link, Paperclip } from 'lucide-react';
+import { Code, ExternalLink, Github, Star, Filter, Edit, Trash2, Plus, Paperclip, File, FileText, Download, X, Upload, Film, Music, Image } from 'lucide-react';
 import { dataService } from '../services/DataService';
-import { Project } from '../models/DataModels';
+import { Project, Attachment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
@@ -16,6 +16,8 @@ const Projects = () => {
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentPreviews, setAttachmentPreviews] = useState<string[]>([]);
   
   const { userRole } = useAuth();
   
@@ -33,6 +35,41 @@ const Projects = () => {
     setFilteredProjects(filtered);
   }, [activeCategory, projects]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    if (files.length > 0) {
+      setAttachments(prev => [...prev, ...files]);
+      
+      // Create and add preview URLs
+      files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setAttachmentPreviews(prev => [...prev, reader.result as string]);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // For non-image files, just add a placeholder
+          setAttachmentPreviews(prev => [...prev, '']);
+        }
+      });
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+    setAttachmentPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) return <Image className="w-4 h-4" />;
+    if (file.type.startsWith('video/')) return <Film className="w-4 h-4" />;
+    if (file.type.startsWith('audio/')) return <Music className="w-4 h-4" />;
+    if (file.type.includes('pdf')) return <FileText className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
+
   const handleDeleteProject = (id: string) => {
     if (dataService.deleteProject(id)) {
       setProjects(prev => prev.filter(project => project.id !== id));
@@ -42,6 +79,8 @@ const Projects = () => {
 
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
+    setAttachments([]);
+    setAttachmentPreviews([]);
     setIsEditing(true);
   };
 
@@ -55,8 +94,10 @@ const Projects = () => {
       techStack: [],
       demoLink: '',
       repoLink: '',
-      attachmentUrl: ''
+      attachments: []
     });
+    setAttachments([]);
+    setAttachmentPreviews([]);
     setIsEditing(true);
   };
 
@@ -66,16 +107,34 @@ const Projects = () => {
     if (!editingProject) return;
     
     try {
+      // Convert file attachments to attachment objects
+      const newAttachments: Attachment[] = attachments.map((file, index) => ({
+        id: Date.now() + index.toString(),
+        name: file.name,
+        url: file.type.startsWith('image/') ? attachmentPreviews[index] : URL.createObjectURL(file),
+        type: file.type.startsWith('image/') ? 'image' : 'document'
+      }));
+
+      // Merge with existing attachments if updating
+      const combinedAttachments = editingProject.id && editingProject.attachments 
+        ? [...editingProject.attachments, ...newAttachments]
+        : newAttachments;
+      
+      const projectToSave = {
+        ...editingProject,
+        attachments: combinedAttachments
+      };
+      
       if (editingProject.id) {
         // Update existing project
-        const updated = dataService.updateProject(editingProject.id, editingProject);
+        const updated = dataService.updateProject(editingProject.id, projectToSave);
         if (updated) {
           setProjects(projects.map(p => p.id === updated.id ? updated : p));
           toast.success('Project updated successfully');
         }
       } else {
         // Add new project
-        const { id, ...projectWithoutId } = editingProject;
+        const { id, ...projectWithoutId } = projectToSave;
         const newProject = dataService.addProject(projectWithoutId);
         setProjects([...projects, newProject]);
         toast.success('Project added successfully');
@@ -83,9 +142,20 @@ const Projects = () => {
       
       setIsEditing(false);
       setEditingProject(null);
+      setAttachments([]);
+      setAttachmentPreviews([]);
     } catch (error) {
       toast.error('Error saving project');
       console.error(error);
+    }
+  };
+
+  const handleRemoveExistingAttachment = (attachmentId: string) => {
+    if (!editingProject || !editingProject.id) return;
+    
+    if (editingProject.attachments) {
+      const updatedAttachments = editingProject.attachments.filter(att => att.id !== attachmentId);
+      setEditingProject({...editingProject, attachments: updatedAttachments});
     }
   };
 
@@ -183,20 +253,6 @@ const Projects = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Attachment URL (Optional)
-                  </label>
-                  <input 
-                    type="text" 
-                    value={editingProject.attachmentUrl || ''}
-                    onChange={(e) => setEditingProject({...editingProject, attachmentUrl: e.target.value})}
-                    className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
-                    focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
-                    placeholder="URL to project file or additional resource"
-                  />
-                </div>
-                
-                <div>
                   <label className="block text-sm font-medium mb-1">Category *</label>
                   <select 
                     value={editingProject.category}
@@ -250,6 +306,72 @@ const Projects = () => {
                   </div>
                 </div>
                 
+                {/* Attachments Section */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Attachments (Optional)</label>
+                  
+                  {/* Current Attachments */}
+                  {editingProject.attachments && editingProject.attachments.length > 0 && (
+                    <div className="mb-3 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
+                      <h4 className="text-xs font-medium mb-2 text-gray-400">Current Attachments</h4>
+                      {editingProject.attachments.map((attachment) => (
+                        <div key={attachment.id} className="flex items-center justify-between p-2 mb-1 bg-black/40 rounded">
+                          <div className="flex items-center space-x-2">
+                            {attachment.type === 'image' ? <Image className="w-4 h-4 text-neon-pink" /> : <FileText className="w-4 h-4 text-neon-blue" />}
+                            <span className="text-sm truncate max-w-[200px]">{attachment.name}</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveExistingAttachment(attachment.id)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* New Attachment Input */}
+                  <div className="flex items-center space-x-3">
+                    <label className="cursor-pointer">
+                      <div className="px-4 py-2 bg-black/50 border border-white/20 rounded-md 
+                      hover:border-neon-blue transition-all flex items-center justify-center">
+                        <Upload className="w-4 h-4 mr-2" />
+                        <span>Add Files</span>
+                      </div>
+                      <input 
+                        type="file" 
+                        multiple
+                        className="hidden" 
+                        onChange={handleFileChange}
+                      />
+                    </label>
+                  </div>
+                  
+                  {/* Attachment Previews */}
+                  {attachments.length > 0 && (
+                    <div className="mt-3 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
+                      <h4 className="text-xs font-medium mb-2 text-gray-400">New Attachments</h4>
+                      {attachments.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 mb-1 bg-black/40 rounded">
+                          <div className="flex items-center space-x-2">
+                            {getFileIcon(file)}
+                            <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveAttachment(index)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex justify-end space-x-3 pt-2">
                   <GlowingButton 
                     type="button" 
@@ -258,6 +380,8 @@ const Projects = () => {
                     onClick={() => {
                       setIsEditing(false);
                       setEditingProject(null);
+                      setAttachments([]);
+                      setAttachmentPreviews([]);
                     }}
                   >
                     Cancel
@@ -318,6 +442,32 @@ const Projects = () => {
                     ))}
                   </div>
                   
+                  {/* Attachments Section */}
+                  {project.attachments && project.attachments.length > 0 && (
+                    <div className="mb-4 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
+                      <h4 className="text-xs font-semibold mb-2 text-gray-300">Attachments</h4>
+                      {project.attachments.map((attachment, idx) => (
+                        <a 
+                          key={idx}
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={attachment.name}
+                          className="flex items-center justify-between p-2 mb-1 last:mb-0 bg-black/40 rounded hover:bg-black/60"
+                        >
+                          <div className="flex items-center space-x-2">
+                            {attachment.type === 'image' 
+                              ? <Image className="w-4 h-4 text-neon-pink" /> 
+                              : <FileText className="w-4 h-4 text-neon-blue" />
+                            }
+                            <span className="text-sm truncate max-w-[180px]">{attachment.name}</span>
+                          </div>
+                          <Download className="w-4 h-4 text-gray-400" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="flex flex-wrap gap-3">
                     {project.demoLink && (
                       <GlowingButton color="cyan" className="text-sm flex-1 py-1.5">
@@ -337,18 +487,9 @@ const Projects = () => {
                       </GlowingButton>
                     )}
                     
-                    {project.attachmentUrl && (
-                      <GlowingButton color="pink" className="text-sm flex-1 py-1.5">
-                        <a href={project.attachmentUrl} className="flex items-center justify-center" target="_blank" rel="noopener noreferrer">
-                          <Paperclip className="w-4 h-4 mr-1" />
-                          Attachment
-                        </a>
-                      </GlowingButton>
-                    )}
-                    
-                    {!project.demoLink && !project.repoLink && !project.attachmentUrl && (
+                    {!project.demoLink && !project.repoLink && project.attachments?.length === 0 && (
                       <div className="text-sm text-gray-400 py-2 text-center w-full">
-                        No external links available
+                        No external links or attachments available
                       </div>
                     )}
                   </div>

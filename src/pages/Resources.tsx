@@ -3,9 +3,12 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
-import { Search, Book, Download, Link as LinkIcon, Star, FileText, Code, Database, Layers, Trash2, Edit, Plus } from 'lucide-react';
+import { 
+  Search, Book, Download, Link as LinkIcon, Star, FileText, 
+  Code, Database, Layers, Trash2, Edit, Plus, Upload, X, Image, File, Film, Music 
+} from 'lucide-react';
 import { dataService } from '../services/DataService';
-import { Resource } from '../models/DataModels';
+import { Resource, Attachment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
@@ -16,6 +19,8 @@ const Resources = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentPreviews, setAttachmentPreviews] = useState<string[]>([]);
   
   const { userRole } = useAuth();
   
@@ -52,6 +57,50 @@ const Resources = () => {
     setFilteredResources(filtered);
   }, [resources, searchTerm, selectedCategory]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    if (files.length > 0) {
+      setAttachments(prev => [...prev, ...files]);
+      
+      // Create and add preview URLs
+      files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setAttachmentPreviews(prev => [...prev, reader.result as string]);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // For non-image files, just add a placeholder
+          setAttachmentPreviews(prev => [...prev, '']);
+        }
+      });
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+    setAttachmentPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) return <Image className="w-4 h-4" />;
+    if (file.type.startsWith('video/')) return <Film className="w-4 h-4" />;
+    if (file.type.startsWith('audio/')) return <Music className="w-4 h-4" />;
+    if (file.type.includes('pdf')) return <FileText className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
+
+  const handleRemoveExistingAttachment = (attachmentId: string) => {
+    if (!editingResource || !editingResource.id) return;
+    
+    if (editingResource.attachments) {
+      const updatedAttachments = editingResource.attachments.filter(att => att.id !== attachmentId);
+      setEditingResource({...editingResource, attachments: updatedAttachments});
+    }
+  };
+
   const getIconForType = (type: string) => {
     switch (type) {
       case 'PDF':
@@ -84,6 +133,8 @@ const Resources = () => {
 
   const handleEditResource = (resource: Resource) => {
     setEditingResource(resource);
+    setAttachments([]);
+    setAttachmentPreviews([]);
     setIsEditing(true);
   };
 
@@ -94,8 +145,11 @@ const Resources = () => {
       description: '',
       type: 'Article',
       category: 'Web Development',
-      link: ''
+      link: '',
+      attachments: []
     });
+    setAttachments([]);
+    setAttachmentPreviews([]);
     setIsEditing(true);
   };
 
@@ -105,16 +159,34 @@ const Resources = () => {
     if (!editingResource) return;
     
     try {
+      // Convert file attachments to attachment objects
+      const newAttachments: Attachment[] = attachments.map((file, index) => ({
+        id: Date.now() + index.toString(),
+        name: file.name,
+        url: file.type.startsWith('image/') ? attachmentPreviews[index] : URL.createObjectURL(file),
+        type: file.type.startsWith('image/') ? 'image' : 'document'
+      }));
+
+      // Merge with existing attachments if updating
+      const combinedAttachments = editingResource.id && editingResource.attachments 
+        ? [...editingResource.attachments, ...newAttachments]
+        : newAttachments;
+      
+      const resourceToSave = {
+        ...editingResource,
+        attachments: combinedAttachments
+      };
+      
       if (editingResource.id) {
         // Update existing resource
-        const updated = dataService.updateResource(editingResource.id, editingResource);
+        const updated = dataService.updateResource(editingResource.id, resourceToSave);
         if (updated) {
           setResources(resources.map(r => r.id === updated.id ? updated : r));
           toast.success('Resource updated successfully');
         }
       } else {
         // Add new resource
-        const { id, ...resourceWithoutId } = editingResource;
+        const { id, ...resourceWithoutId } = resourceToSave;
         const newResource = dataService.addResource(resourceWithoutId);
         setResources([...resources, newResource]);
         toast.success('Resource added successfully');
@@ -122,6 +194,8 @@ const Resources = () => {
       
       setIsEditing(false);
       setEditingResource(null);
+      setAttachments([]);
+      setAttachmentPreviews([]);
     } catch (error) {
       toast.error('Error saving resource');
       console.error(error);
@@ -189,7 +263,7 @@ const Resources = () => {
 
         {/* Resource Edit Modal */}
         {isEditing && editingResource && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 overflow-y-auto">
             <GlassCard className="w-full max-w-lg p-6">
               <h2 className="text-xl font-bold mb-4 flex items-center">
                 {editingResource.id ? 'Edit Resource' : 'Add New Resource'}
@@ -263,6 +337,72 @@ const Resources = () => {
                   />
                 </div>
                 
+                {/* Attachments Section */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Attachments (Optional)</label>
+                  
+                  {/* Current Attachments */}
+                  {editingResource.attachments && editingResource.attachments.length > 0 && (
+                    <div className="mb-3 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
+                      <h4 className="text-xs font-medium mb-2 text-gray-400">Current Attachments</h4>
+                      {editingResource.attachments.map((attachment) => (
+                        <div key={attachment.id} className="flex items-center justify-between p-2 mb-1 bg-black/40 rounded">
+                          <div className="flex items-center space-x-2">
+                            {attachment.type === 'image' ? <Image className="w-4 h-4 text-neon-pink" /> : <FileText className="w-4 h-4 text-neon-blue" />}
+                            <span className="text-sm truncate max-w-[200px]">{attachment.name}</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveExistingAttachment(attachment.id)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* New Attachment Input */}
+                  <div className="flex items-center space-x-3">
+                    <label className="cursor-pointer">
+                      <div className="px-4 py-2 bg-black/50 border border-white/20 rounded-md 
+                      hover:border-neon-blue transition-all flex items-center justify-center">
+                        <Upload className="w-4 h-4 mr-2" />
+                        <span>Add Files</span>
+                      </div>
+                      <input 
+                        type="file" 
+                        multiple
+                        className="hidden" 
+                        onChange={handleFileChange}
+                      />
+                    </label>
+                  </div>
+                  
+                  {/* Attachment Previews */}
+                  {attachments.length > 0 && (
+                    <div className="mt-3 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
+                      <h4 className="text-xs font-medium mb-2 text-gray-400">New Attachments</h4>
+                      {attachments.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 mb-1 bg-black/40 rounded">
+                          <div className="flex items-center space-x-2">
+                            {getFileIcon(file)}
+                            <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveAttachment(index)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex justify-end space-x-3 pt-2">
                   <GlowingButton 
                     type="button" 
@@ -271,6 +411,8 @@ const Resources = () => {
                     onClick={() => {
                       setIsEditing(false);
                       setEditingResource(null);
+                      setAttachments([]);
+                      setAttachmentPreviews([]);
                     }}
                   >
                     Cancel
@@ -300,6 +442,50 @@ const Resources = () => {
                     </span>
                   </div>
                   <p className="text-gray-300 text-sm mb-3">{resource.description}</p>
+                  
+                  {/* Attachments Display */}
+                  {resource.attachments && resource.attachments.length > 0 && (
+                    <div className="mb-3 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
+                      <h4 className="text-xs font-semibold mb-2 text-gray-300">Attachments</h4>
+                      {resource.attachments.map((attachment, idx) => (
+                        <div key={idx} className="mb-2 last:mb-0">
+                          {attachment.type === 'image' ? (
+                            <div className="relative group">
+                              <img 
+                                src={attachment.url} 
+                                alt={attachment.name}
+                                className="max-w-full h-auto rounded border border-white/10" 
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <a 
+                                  href={attachment.url} 
+                                  download={attachment.name}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 bg-black/60 rounded-full"
+                                >
+                                  <Download className="w-4 h-4 text-neon-blue" />
+                                </a>
+                              </div>
+                            </div>
+                          ) : (
+                            <a 
+                              href={attachment.url}
+                              download={attachment.name}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center p-2 bg-black/40 rounded hover:bg-black/60 transition-colors"
+                            >
+                              <FileText className="w-4 h-4 mr-2 text-neon-blue" />
+                              <span className="text-sm truncate flex-1">{attachment.name}</span>
+                              <Download className="w-4 h-4 text-gray-400" />
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">{resource.category}</span>
                     <div className="flex space-x-2">
