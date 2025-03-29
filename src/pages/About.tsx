@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
@@ -19,26 +18,22 @@ const About = () => {
   const [editingExpId, setEditingExpId] = useState<number | null>(null);
   const [newExp, setNewExp] = useState({ title: '', company: '', period: '', description: '' });
   const [isEditingSocial, setIsEditingSocial] = useState(false);
-  const [socialLinks, setSocialLinks] = useState({
-    linkedin: '',
-    github: '',
-    twitter: '',
-    email: ''
-  });
+  
+  const [socialLinks, setSocialLinks] = useState<{
+    linkedin?: string;
+    github?: string;
+    twitter?: string;
+    email?: string;
+  }>({});
+  
   const [isEditingProfileImage, setIsEditingProfileImage] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState('');
   
   useEffect(() => {
-    // Load about content
     const content = dataService.getAboutContent();
     setAboutContent(content);
     setEditedBio(content.bio);
-    setSocialLinks(content.socialLinks || {
-      linkedin: 'https://www.linkedin.com/in/sunny-soni1089',
-      github: '#',
-      twitter: '#',
-      email: 'mailto:example@example.com'
-    });
+    setSocialLinks(content.socialLinks || {});
     setProfileImageUrl(content.profileImage || '');
   }, []);
 
@@ -143,10 +138,8 @@ const About = () => {
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-          {/* Bio Card */}
           <GlassCard className="p-6 md:col-span-1">
             <div className="flex flex-col items-center">
-              {/* Profile Image */}
               <div className="w-28 h-28 rounded-full bg-black/60 border-4 border-neon-blue/30 flex items-center justify-center mb-4 overflow-hidden relative">
                 {aboutContent.profileImage ? (
                   <img src={aboutContent.profileImage} alt="Profile" className="w-full h-full object-cover" />
@@ -163,40 +156,6 @@ const About = () => {
                   </button>
                 )}
               </div>
-              
-              {/* Edit Profile Image Modal */}
-              {isEditingProfileImage && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                  <GlassCard className="p-6 max-w-md w-full">
-                    <h3 className="text-lg font-bold mb-4 flex items-center">
-                      <Image className="w-5 h-5 mr-2 text-neon-blue" />
-                      Update Profile Image
-                    </h3>
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium mb-1">Image URL</label>
-                      <input
-                        type="text"
-                        value={profileImageUrl}
-                        onChange={(e) => setProfileImageUrl(e.target.value)}
-                        placeholder="Enter image URL"
-                        className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <GlowingButton 
-                        color="cyan" 
-                        className="text-sm"
-                        onClick={() => setIsEditingProfileImage(false)}
-                      >
-                        Cancel
-                      </GlowingButton>
-                      <GlowingButton onClick={handleProfileImageSave} className="text-sm">
-                        Save Image
-                      </GlowingButton>
-                    </div>
-                  </GlassCard>
-                </div>
-              )}
               
               <h2 className="text-2xl font-bold mb-2">Sunny Soni</h2>
               <p className="text-gray-300 mb-4 text-center">Digital Explorer & Creative Technologist</p>
@@ -247,7 +206,6 @@ const About = () => {
                 )}
               </div>
               
-              {/* Edit Social Links Modal */}
               {isEditingSocial && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
                   <GlassCard className="p-6 max-w-md w-full">
@@ -338,7 +296,6 @@ const About = () => {
                     )}
                   </div>
                   
-                  {/* Add new skill form */}
                   {userRole === 'admin' && newSkill.name !== null && (
                     <div className="mb-4 p-3 border border-white/10 rounded-md bg-black/30">
                       <div className="mb-2">
@@ -465,7 +422,6 @@ const About = () => {
             </div>
           </GlassCard>
 
-          {/* Bio Details */}
           <GlassCard className="p-6 md:col-span-2">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold flex items-center">
@@ -528,7 +484,6 @@ const About = () => {
                 )}
               </div>
               
-              {/* Add new experience form */}
               {userRole === 'admin' && newExp.title !== null && (
                 <div className="mb-4 p-4 glass-card">
                   <div className="space-y-3">
