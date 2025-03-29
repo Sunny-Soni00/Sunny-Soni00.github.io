@@ -1,4 +1,3 @@
-
 import { Project, Resource, Review, AboutContent, Attachment, UserDetails } from '../models/DataModels';
 
 // Initial Projects Data
@@ -240,15 +239,10 @@ class DataService {
     
     // Update older projects that might not have attachments array
     this.projects = this.projects.map(project => {
-      if (project.attachmentUrl && !project.attachments) {
+      if (!project.attachments) {
         return {
           ...project,
-          attachments: [{
-            id: Date.now().toString(),
-            name: 'Attachment',
-            url: project.attachmentUrl,
-            type: project.attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'document'
-          }]
+          attachments: []
         };
       }
       return project;
