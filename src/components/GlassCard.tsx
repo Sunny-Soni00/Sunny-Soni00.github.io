@@ -6,13 +6,15 @@ interface GlassCardProps {
   className?: string;
   glowColor?: 'cyan' | 'pink' | 'purple';
   hover?: boolean;
+  onClick?: () => void; // Add onClick prop
 }
 
 const GlassCard = ({ 
   children, 
   className = '', 
   glowColor = 'cyan',
-  hover = true 
+  hover = true,
+  onClick 
 }: GlassCardProps) => {
   
   const glowStyles = {
@@ -23,7 +25,8 @@ const GlassCard = ({
   
   return (
     <div 
-      className={`glass-card ${hover ? glowStyles[glowColor] : ''} ${className}`}
+      className={`glass-card ${hover ? glowStyles[glowColor] : ''} ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
     >
       {children}
     </div>
