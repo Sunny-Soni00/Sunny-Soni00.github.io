@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
-import { Code, ExternalLink, Github, Star, Filter, Edit, Trash2, Plus } from 'lucide-react';
+import { Code, ExternalLink, Github, Star, Filter, Edit, Trash2, Plus, Link, Paperclip } from 'lucide-react';
 import { dataService } from '../services/DataService';
 import { Project } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
@@ -54,7 +54,8 @@ const Projects = () => {
       category: 'Web Dev',
       techStack: [],
       demoLink: '',
-      repoLink: ''
+      repoLink: '',
+      attachmentUrl: ''
     });
     setIsEditing(true);
   };
@@ -182,6 +183,20 @@ const Projects = () => {
                 </div>
                 
                 <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Attachment URL (Optional)
+                  </label>
+                  <input 
+                    type="text" 
+                    value={editingProject.attachmentUrl || ''}
+                    onChange={(e) => setEditingProject({...editingProject, attachmentUrl: e.target.value})}
+                    className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
+                    focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
+                    placeholder="URL to project file or additional resource"
+                  />
+                </div>
+                
+                <div>
                   <label className="block text-sm font-medium mb-1">Category *</label>
                   <select 
                     value={editingProject.category}
@@ -211,26 +226,26 @@ const Projects = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Demo Link *</label>
+                    <label className="block text-sm font-medium mb-1">Demo Link (Optional)</label>
                     <input 
                       type="text" 
-                      value={editingProject.demoLink}
+                      value={editingProject.demoLink || ''}
                       onChange={(e) => setEditingProject({...editingProject, demoLink: e.target.value})}
                       className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
                       focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
-                      required
+                      placeholder="Live demo URL"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-1">Repository Link *</label>
+                    <label className="block text-sm font-medium mb-1">Repository Link (Optional)</label>
                     <input 
                       type="text" 
-                      value={editingProject.repoLink}
+                      value={editingProject.repoLink || ''}
                       onChange={(e) => setEditingProject({...editingProject, repoLink: e.target.value})}
                       className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
                       focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
-                      required
+                      placeholder="GitHub repo URL"
                     />
                   </div>
                 </div>
@@ -303,19 +318,39 @@ const Projects = () => {
                     ))}
                   </div>
                   
-                  <div className="flex gap-3">
-                    <GlowingButton color="cyan" className="text-sm flex-1 py-1.5">
-                      <a href={project.demoLink} className="flex items-center justify-center" target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="w-4 h-4 mr-1" />
-                        Demo
-                      </a>
-                    </GlowingButton>
-                    <GlowingButton color="purple" className="text-sm flex-1 py-1.5">
-                      <a href={project.repoLink} className="flex items-center justify-center" target="_blank" rel="noopener noreferrer">
-                        <Github className="w-4 h-4 mr-1" />
-                        Code
-                      </a>
-                    </GlowingButton>
+                  <div className="flex flex-wrap gap-3">
+                    {project.demoLink && (
+                      <GlowingButton color="cyan" className="text-sm flex-1 py-1.5">
+                        <a href={project.demoLink} className="flex items-center justify-center" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          Demo
+                        </a>
+                      </GlowingButton>
+                    )}
+                    
+                    {project.repoLink && (
+                      <GlowingButton color="purple" className="text-sm flex-1 py-1.5">
+                        <a href={project.repoLink} className="flex items-center justify-center" target="_blank" rel="noopener noreferrer">
+                          <Github className="w-4 h-4 mr-1" />
+                          Code
+                        </a>
+                      </GlowingButton>
+                    )}
+                    
+                    {project.attachmentUrl && (
+                      <GlowingButton color="pink" className="text-sm flex-1 py-1.5">
+                        <a href={project.attachmentUrl} className="flex items-center justify-center" target="_blank" rel="noopener noreferrer">
+                          <Paperclip className="w-4 h-4 mr-1" />
+                          Attachment
+                        </a>
+                      </GlowingButton>
+                    )}
+                    
+                    {!project.demoLink && !project.repoLink && !project.attachmentUrl && (
+                      <div className="text-sm text-gray-400 py-2 text-center w-full">
+                        No external links available
+                      </div>
+                    )}
                   </div>
                 </div>
               </GlassCard>

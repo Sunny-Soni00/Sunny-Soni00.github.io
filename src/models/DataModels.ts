@@ -5,10 +5,11 @@ export interface Project {
   title: string;
   description: string;
   image: string;
+  attachmentUrl?: string; // Optional attachment URL
   category: string;
   techStack: string[];
-  demoLink: string;
-  repoLink: string;
+  demoLink?: string; // Make demo link optional
+  repoLink?: string; // Make repo link optional
 }
 
 // Resource Model
@@ -35,6 +36,13 @@ export interface Review {
 // About Page Content Model
 export interface AboutContent {
   bio: string;
+  profileImage?: string; // Add profile image support
+  socialLinks: {
+    linkedin?: string;
+    github?: string;
+    twitter?: string;
+    email?: string;
+  };
   experience: {
     title: string;
     company: string;
@@ -45,4 +53,17 @@ export interface AboutContent {
     name: string;
     level: number;
   }[];
+}
+
+// Admin Credentials
+export interface AdminCredentials {
+  userId: string;
+  password: string;
+}
+
+// User Details
+export interface UserDetails {
+  name: string;
+  email: string;
+  visitDate: string;
 }

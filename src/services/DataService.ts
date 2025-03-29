@@ -173,6 +173,12 @@ const initialAboutContent: AboutContent = {
   Through this digital dreamscape, I aim to share my learnings, projects, and resources that might help 
   fellow cosmic travelers on their own journeys. Each project represents a star in my personal galaxy of 
   experiences, and each resource is a planet of knowledge waiting to be explored.`,
+  socialLinks: {
+    linkedin: 'https://www.linkedin.com/in/sunny-soni1089',
+    github: '#',
+    twitter: '#',
+    email: 'mailto:example@example.com'
+  },
   experience: [
     {
       title: 'Digital Innovation Lead',

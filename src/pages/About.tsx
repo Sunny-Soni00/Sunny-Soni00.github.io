@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
-import { Linkedin, Github, Twitter, Mail, User, Code, Star, Edit, Save, Plus, Trash2 } from 'lucide-react';
+import { Linkedin, Github, Twitter, Mail, User, Code, Star, Edit, Save, Plus, Trash2, Image, Link } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { dataService } from '../services/DataService';
 import { AboutContent } from '../models/DataModels';
@@ -18,12 +18,28 @@ const About = () => {
   const [newSkill, setNewSkill] = useState({ name: '', level: 50 });
   const [editingExpId, setEditingExpId] = useState<number | null>(null);
   const [newExp, setNewExp] = useState({ title: '', company: '', period: '', description: '' });
+  const [isEditingSocial, setIsEditingSocial] = useState(false);
+  const [socialLinks, setSocialLinks] = useState({
+    linkedin: '',
+    github: '',
+    twitter: '',
+    email: ''
+  });
+  const [isEditingProfileImage, setIsEditingProfileImage] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState('');
   
   useEffect(() => {
     // Load about content
     const content = dataService.getAboutContent();
     setAboutContent(content);
     setEditedBio(content.bio);
+    setSocialLinks(content.socialLinks || {
+      linkedin: 'https://www.linkedin.com/in/sunny-soni1089',
+      github: '#',
+      twitter: '#',
+      email: 'mailto:example@example.com'
+    });
+    setProfileImageUrl(content.profileImage || '');
   }, []);
 
   if (!aboutContent) return null;
@@ -33,6 +49,20 @@ const About = () => {
     setAboutContent(updated);
     setIsEditingBio(false);
     toast.success('Bio updated successfully');
+  };
+
+  const handleSocialLinksSave = () => {
+    const updated = dataService.updateAboutContent({ socialLinks });
+    setAboutContent(updated);
+    setIsEditingSocial(false);
+    toast.success('Social links updated successfully');
+  };
+
+  const handleProfileImageSave = () => {
+    const updated = dataService.updateAboutContent({ profileImage: profileImageUrl });
+    setAboutContent(updated);
+    setIsEditingProfileImage(false);
+    toast.success('Profile image updated successfully');
   };
 
   const handleSkillAdd = () => {
@@ -116,40 +146,180 @@ const About = () => {
           {/* Bio Card */}
           <GlassCard className="p-6 md:col-span-1">
             <div className="flex flex-col items-center">
-              <div className="w-28 h-28 rounded-full bg-black/60 border-4 border-neon-blue/30 flex items-center justify-center mb-4">
-                <User className="w-16 h-16 text-neon-blue" />
+              {/* Profile Image */}
+              <div className="w-28 h-28 rounded-full bg-black/60 border-4 border-neon-blue/30 flex items-center justify-center mb-4 overflow-hidden relative">
+                {aboutContent.profileImage ? (
+                  <img src={aboutContent.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-16 h-16 text-neon-blue" />
+                )}
+                
+                {userRole === 'admin' && (
+                  <button 
+                    onClick={() => setIsEditingProfileImage(true)}
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-black/80 flex items-center justify-center border border-neon-blue/50"
+                  >
+                    <Edit className="w-4 h-4 text-neon-blue" />
+                  </button>
+                )}
               </div>
+              
+              {/* Edit Profile Image Modal */}
+              {isEditingProfileImage && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                  <GlassCard className="p-6 max-w-md w-full">
+                    <h3 className="text-lg font-bold mb-4 flex items-center">
+                      <Image className="w-5 h-5 mr-2 text-neon-blue" />
+                      Update Profile Image
+                    </h3>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-1">Image URL</label>
+                      <input
+                        type="text"
+                        value={profileImageUrl}
+                        onChange={(e) => setProfileImageUrl(e.target.value)}
+                        placeholder="Enter image URL"
+                        className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <GlowingButton 
+                        color="cyan" 
+                        className="text-sm"
+                        onClick={() => setIsEditingProfileImage(false)}
+                      >
+                        Cancel
+                      </GlowingButton>
+                      <GlowingButton onClick={handleProfileImageSave} className="text-sm">
+                        Save Image
+                      </GlowingButton>
+                    </div>
+                  </GlassCard>
+                </div>
+              )}
+              
               <h2 className="text-2xl font-bold mb-2">Sunny Soni</h2>
               <p className="text-gray-300 mb-4 text-center">Digital Explorer & Creative Technologist</p>
               
               <div className="flex space-x-3 mb-6">
-                <a 
-                  href="https://www.linkedin.com/in/sunny-soni1089" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
-                >
-                  <Linkedin className="w-5 h-5" />
-                </a>
-                <a 
-                  href="#" 
-                  className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
-                >
-                  <Github className="w-5 h-5" />
-                </a>
-                <a 
-                  href="#" 
-                  className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
-                >
-                  <Twitter className="w-5 h-5" />
-                </a>
-                <a 
-                  href="mailto:example@example.com" 
-                  className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
-                >
-                  <Mail className="w-5 h-5" />
-                </a>
+                {aboutContent.socialLinks?.linkedin && (
+                  <a 
+                    href={aboutContent.socialLinks.linkedin} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
+                  >
+                    <Linkedin className="w-5 h-5" />
+                  </a>
+                )}
+                {aboutContent.socialLinks?.github && (
+                  <a 
+                    href={aboutContent.socialLinks.github} 
+                    className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
+                  >
+                    <Github className="w-5 h-5" />
+                  </a>
+                )}
+                {aboutContent.socialLinks?.twitter && (
+                  <a 
+                    href={aboutContent.socialLinks.twitter} 
+                    className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
+                  >
+                    <Twitter className="w-5 h-5" />
+                  </a>
+                )}
+                {aboutContent.socialLinks?.email && (
+                  <a 
+                    href={aboutContent.socialLinks.email} 
+                    className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
+                  >
+                    <Mail className="w-5 h-5" />
+                  </a>
+                )}
+                
+                {userRole === 'admin' && (
+                  <button 
+                    onClick={() => setIsEditingSocial(true)}
+                    className="w-10 h-10 rounded-full bg-black/40 border border-white/20 flex items-center justify-center transition-all hover:border-neon-blue hover:shadow-neon-glow"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                )}
               </div>
+              
+              {/* Edit Social Links Modal */}
+              {isEditingSocial && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                  <GlassCard className="p-6 max-w-md w-full">
+                    <h3 className="text-lg font-bold mb-4 flex items-center">
+                      <Link className="w-5 h-5 mr-2 text-neon-blue" />
+                      Update Social Links
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1 flex items-center">
+                          <Linkedin className="w-4 h-4 mr-1" /> LinkedIn URL
+                        </label>
+                        <input
+                          type="text"
+                          value={socialLinks.linkedin || ''}
+                          onChange={(e) => setSocialLinks({...socialLinks, linkedin: e.target.value})}
+                          placeholder="LinkedIn profile URL"
+                          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 flex items-center">
+                          <Github className="w-4 h-4 mr-1" /> Github URL
+                        </label>
+                        <input
+                          type="text"
+                          value={socialLinks.github || ''}
+                          onChange={(e) => setSocialLinks({...socialLinks, github: e.target.value})}
+                          placeholder="Github profile URL"
+                          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 flex items-center">
+                          <Twitter className="w-4 h-4 mr-1" /> Twitter URL
+                        </label>
+                        <input
+                          type="text"
+                          value={socialLinks.twitter || ''}
+                          onChange={(e) => setSocialLinks({...socialLinks, twitter: e.target.value})}
+                          placeholder="Twitter profile URL"
+                          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 flex items-center">
+                          <Mail className="w-4 h-4 mr-1" /> Email (mailto:)
+                        </label>
+                        <input
+                          type="text"
+                          value={socialLinks.email || ''}
+                          onChange={(e) => setSocialLinks({...socialLinks, email: e.target.value})}
+                          placeholder="mailto:your@email.com"
+                          className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <GlowingButton 
+                        color="cyan" 
+                        className="text-sm"
+                        onClick={() => setIsEditingSocial(false)}
+                      >
+                        Cancel
+                      </GlowingButton>
+                      <GlowingButton onClick={handleSocialLinksSave} className="text-sm">
+                        Save Links
+                      </GlowingButton>
+                    </div>
+                  </GlassCard>
+                </div>
+              )}
               
               <div className="w-full border-t border-white/10 pt-6 mt-2">
                 <div className="mb-4">
@@ -521,64 +691,6 @@ const About = () => {
             </div>
           </GlassCard>
         </div>
-
-        {/* Contact Form */}
-        <GlassCard className="mt-12 p-6 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6 text-center">Send a Cosmic Message</h2>
-          
-          <form className="space-y-4" onSubmit={(e) => {
-            e.preventDefault();
-            toast.success('Your message has been sent!');
-            // Reset form
-            e.currentTarget.reset();
-          }}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
-                <input 
-                  type="text" 
-                  className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
-                  placeholder="Your name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input 
-                  type="email" 
-                  className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
-                  placeholder="Your email"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Subject</label>
-              <input 
-                type="text" 
-                className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
-                placeholder="Message subject"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Message</label>
-              <textarea 
-                className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all min-h-[120px] resize-none"
-                placeholder="Your message"
-                required
-              ></textarea>
-            </div>
-            
-            <div className="flex justify-center">
-              <GlowingButton className="w-full md:w-auto" type="submit">
-                Send Message
-              </GlowingButton>
-            </div>
-          </form>
-        </GlassCard>
       </div>
     </Layout>
   );

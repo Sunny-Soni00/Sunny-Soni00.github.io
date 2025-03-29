@@ -1,41 +1,61 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import Projects from "./pages/Projects";
-import Resources from "./pages/Resources";
-import Reviews from "./pages/Reviews";
-import NotFound from "./pages/NotFound";
-import AdminDashboard from "./pages/AdminDashboard";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+import Home from './pages/Index';
+import About from './pages/About';
+import Projects from './pages/Projects';
+import Resources from './pages/Resources';
+import Reviews from './pages/Reviews';
+import AdminDashboard from './pages/AdminDashboard';
+import NotFound from './pages/NotFound';
+import UserDetailsForm from './components/UserDetailsForm';
+import AdminLogin from './components/AdminLogin';
+
+import './App.css';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+const AppRoutes = () => {
+  const { showUserDetailsForm, isAuthenticated, userRole } = useAuth();
+  
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/resources" element={<Resources />} />
+        <Route path="/reviews" element={<Reviews />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      
+      {/* User Details Form for First Visit */}
+      {showUserDetailsForm && <UserDetailsForm />}
+      
+      {/* Admin Login Modal */}
+      {userRole === 'admin' && !isAuthenticated && window.location.pathname === "/admin" && (
+        <AdminLogin />
+      )}
+    </>
+  );
+};
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/resources" element={<Resources />} />
-            <Route path="/reviews" element={<Reviews />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <Router>
+          <AppRoutes />
+          <Toaster position="top-right" richColors />
+        </Router>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;
