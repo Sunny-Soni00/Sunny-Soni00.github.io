@@ -174,7 +174,7 @@ const ProjectDetails = () => {
                         <div className="space-y-2">
                           <div className="h-40 bg-black/60 rounded-md flex items-center justify-center overflow-hidden">
                             <div className="relative w-full h-full">
-                              <div className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-100 hover:opacity-0 transition-opacity">
+                              <div className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity">
                                 <Eye className="w-8 h-8 text-neon-blue" />
                               </div>
                               <img 
@@ -280,7 +280,7 @@ const ProjectDetails = () => {
                     rows={2}
                   />
                   <GlowingButton
-                    onClick={(e) => handleAddComment(e)}
+                    onClick={handleAddComment}
                     className="self-end"
                     color="cyan"
                   >

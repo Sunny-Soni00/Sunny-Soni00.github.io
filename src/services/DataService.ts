@@ -1,4 +1,4 @@
-import { Project, Resource, Review, UserDetails, DatabaseChange, AboutContent, AdminCredentials, Attachment } from '../models/DataModels';
+import { Project, Resource, Review, UserDetails, DatabaseChange, AboutContent, AdminCredentials, Attachment, Comment } from '../models/DataModels';
 
 export class DataService {
   private static instance: DataService;
@@ -327,14 +327,14 @@ export class DataService {
     return newUser;
   }
 
-  updateUserDetails(id: string, updatedUser: UserDetails): UserDetails | undefined {
+  updateUserDetails(id: string, updatedFields: Partial<UserDetails>): UserDetails | undefined {
     const userDetails = this.getAllUserDetails();
     const userIndex = userDetails.findIndex(user => user.id === id);
     if (userIndex !== -1) {
-      userDetails[userIndex] = updatedUser;
+      userDetails[userIndex] = { ...userDetails[userIndex], ...updatedFields };
       localStorage.setItem('userDetails', JSON.stringify(userDetails));
       this.logDatabaseChange('update', 'user', id);
-      return updatedUser;
+      return userDetails[userIndex];
     }
     return undefined;
   }
@@ -355,9 +355,11 @@ export class DataService {
     return aboutContent ? JSON.parse(aboutContent) : this.initialAboutContent;
   }
 
-  updateAboutContent(updatedAboutContent: AboutContent): AboutContent {
-    localStorage.setItem('aboutContent', JSON.stringify(updatedAboutContent));
-    return updatedAboutContent;
+  updateAboutContent(updatedFields: Partial<AboutContent>): AboutContent {
+    const currentContent = this.getAboutContent();
+    const updatedContent = { ...currentContent, ...updatedFields };
+    localStorage.setItem('aboutContent', JSON.stringify(updatedContent));
+    return updatedContent;
   }
 
   getAdminCredentials(): AdminCredentials[] {
@@ -370,7 +372,6 @@ export class DataService {
     return updatedAdminCredentials;
   }
 
-  // Method to reset all data to default
   resetData() {
     localStorage.removeItem('projects');
     localStorage.removeItem('resources');
@@ -383,7 +384,6 @@ export class DataService {
     localStorage.setItem('userDetails', JSON.stringify(this.initialUserDetails));
   }
 
-  // Method to log database changes
   private logDatabaseChange(action: DatabaseChange['action'], entityType: DatabaseChange['entityType'], entityId: string) {
     const changes = this.getAllDatabaseChanges();
     const newChange: DatabaseChange = {
@@ -397,13 +397,11 @@ export class DataService {
     localStorage.setItem('databaseChanges', JSON.stringify(changes));
   }
 
-  // Add missing method for database changes
   getAllDatabaseChanges() {
     const changes = localStorage.getItem('databaseChanges');
     return changes ? JSON.parse(changes) : [];
   }
 
-  // Add method for database export
   downloadDatabase() {
     const data = {
       projects: this.getAllProjects(),
@@ -423,9 +421,7 @@ export class DataService {
     return true;
   }
 
-  // Add missing method for recent activity
   getRecentActivity(limit: number = 5) {
-    // Get combined recent projects, resources, and reviews
     const projects = this.getAllProjects().slice(0, limit).map(p => ({
       id: p.id,
       type: 'Project',
@@ -447,14 +443,12 @@ export class DataService {
       category: r.role
     }));
     
-    // Combine and sort by most recent (for this mock, we'll just randomize)
     return [...projects, ...resources, ...reviews]
       .sort(() => Math.random() - 0.5)
       .slice(0, limit);
   }
 
-  // Add missing method for project comments
-  addProjectComment(projectId: string, comment: Partial<Comment>) {
+  addProjectComment(projectId: string, newComment: Partial<Comment>): boolean {
     const projects = this.getAllProjects();
     const projectIndex = projects.findIndex(p => p.id === projectId);
     
@@ -463,11 +457,16 @@ export class DataService {
         projects[projectIndex].comments = [];
       }
       
-      projects[projectIndex].comments?.push({
-        ...(comment as Comment),
+      const comment: Comment = {
         id: Date.now().toString(),
-        date: new Date().toISOString()
-      });
+        userId: newComment.userId || 'anonymous',
+        userName: newComment.userName || 'Anonymous',
+        message: newComment.message || '',
+        date: new Date().toISOString(),
+        userImage: newComment.userImage
+      };
+      
+      projects[projectIndex].comments?.push(comment);
       
       localStorage.setItem('projects', JSON.stringify(projects));
       return true;
@@ -476,8 +475,7 @@ export class DataService {
     return false;
   }
 
-  // Add missing method for resource comments
-  addResourceComment(resourceId: string, comment: Partial<Comment>) {
+  addResourceComment(resourceId: string, newComment: Partial<Comment>): boolean {
     const resources = this.getAllResources();
     const resourceIndex = resources.findIndex(r => r.id === resourceId);
     
@@ -486,11 +484,16 @@ export class DataService {
         resources[resourceIndex].comments = [];
       }
       
-      resources[resourceIndex].comments?.push({
-        ...(comment as Comment),
+      const comment: Comment = {
         id: Date.now().toString(),
-        date: new Date().toISOString()
-      });
+        userId: newComment.userId || 'anonymous',
+        userName: newComment.userName || 'Anonymous',
+        message: newComment.message || '',
+        date: new Date().toISOString(),
+        userImage: newComment.userImage
+      };
+      
+      resources[resourceIndex].comments?.push(comment);
       
       localStorage.setItem('resources', JSON.stringify(resources));
       return true;
@@ -500,5 +503,4 @@ export class DataService {
   }
 }
 
-// Export the singleton instance
 export const dataService = DataService.getInstance();
