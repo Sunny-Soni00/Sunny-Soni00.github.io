@@ -1,3 +1,4 @@
+
 import { Project, Resource, Review, AboutContent, Attachment, UserDetails } from '../models/DataModels';
 
 // Initial Projects Data
@@ -207,6 +208,17 @@ const RESOURCES_STORAGE_KEY = 'cosmicApp_resources';
 const REVIEWS_STORAGE_KEY = 'cosmicApp_reviews';
 const ABOUT_STORAGE_KEY = 'cosmicApp_about';
 const USER_DETAILS_STORAGE_KEY = 'cosmicApp_userDetails';
+const DATABASE_LOGS_STORAGE_KEY = 'cosmicApp_databaseLogs';
+
+// Database Log Entry
+interface DatabaseLogEntry {
+  id: string;
+  timestamp: string;
+  action: 'create' | 'update' | 'delete';
+  entity: 'project' | 'resource' | 'review' | 'user' | 'about';
+  entityId: string;
+  details: string;
+}
 
 // Helper to initialize data from localStorage or defaults
 const initializeData = <T>(storageKey: string, initialData: T): T => {
@@ -230,6 +242,7 @@ class DataService {
   private reviews: Review[];
   private aboutContent: AboutContent;
   private userDetails: UserDetails[];
+  private databaseLogs: DatabaseLogEntry[];
 
   constructor() {
     this.projects = initializeData<Project[]>(PROJECTS_STORAGE_KEY, initialProjects);
@@ -237,6 +250,7 @@ class DataService {
     this.reviews = initializeData<Review[]>(REVIEWS_STORAGE_KEY, initialReviews);
     this.aboutContent = initializeData<AboutContent>(ABOUT_STORAGE_KEY, initialAboutContent);
     this.userDetails = initializeData<UserDetails[]>(USER_DETAILS_STORAGE_KEY, []);
+    this.databaseLogs = initializeData<DatabaseLogEntry[]>(DATABASE_LOGS_STORAGE_KEY, []);
     
     // Update older projects that might not have attachments array
     this.projects = this.projects.map(project => {
@@ -265,6 +279,41 @@ class DataService {
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
   }
 
+  // Log database changes
+  private logDatabaseChange(action: 'create' | 'update' | 'delete', entity: 'project' | 'resource' | 'review' | 'user' | 'about', entityId: string, details: string) {
+    const logEntry: DatabaseLogEntry = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      action,
+      entity,
+      entityId,
+      details
+    };
+    
+    this.databaseLogs = [...this.databaseLogs, logEntry];
+    localStorage.setItem(DATABASE_LOGS_STORAGE_KEY, JSON.stringify(this.databaseLogs));
+    return logEntry;
+  }
+  
+  // Get all database logs
+  getDatabaseLogs(): DatabaseLogEntry[] {
+    return [...this.databaseLogs];
+  }
+  
+  // Export database as JSON
+  exportDatabase(): string {
+    const database = {
+      projects: this.projects,
+      resources: this.resources,
+      reviews: this.reviews,
+      aboutContent: this.aboutContent,
+      userDetails: this.userDetails,
+      databaseLogs: this.databaseLogs
+    };
+    
+    return JSON.stringify(database, null, 2);
+  }
+
   // Projects Methods
   getAllProjects(): Project[] {
     return [...this.projects];
@@ -281,6 +330,8 @@ class DataService {
     };
     this.projects = [...this.projects, newProject];
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    
+    this.logDatabaseChange('create', 'project', newProject.id, `Created project: ${newProject.title}`);
     return newProject;
   }
 
@@ -295,14 +346,24 @@ class DataService {
       ...this.projects.slice(index + 1)
     ];
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    
+    this.logDatabaseChange('update', 'project', id, `Updated project: ${updatedProject.title}`);
     return updatedProject;
   }
 
   deleteProject(id: string): boolean {
+    const project = this.getProjectById(id);
+    if (!project) return false;
+    
     const initialLength = this.projects.length;
     this.projects = this.projects.filter(p => p.id !== id);
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
-    return this.projects.length < initialLength;
+    
+    if (this.projects.length < initialLength) {
+      this.logDatabaseChange('delete', 'project', id, `Deleted project: ${project.title}`);
+      return true;
+    }
+    return false;
   }
 
   // Projects Attachments Methods
@@ -355,6 +416,8 @@ class DataService {
     };
     this.resources = [...this.resources, newResource];
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
+    
+    this.logDatabaseChange('create', 'resource', newResource.id, `Created resource: ${newResource.title}`);
     return newResource;
   }
 
@@ -369,14 +432,24 @@ class DataService {
       ...this.resources.slice(index + 1)
     ];
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
+    
+    this.logDatabaseChange('update', 'resource', id, `Updated resource: ${updatedResource.title}`);
     return updatedResource;
   }
 
   deleteResource(id: string): boolean {
+    const resource = this.getResourceById(id);
+    if (!resource) return false;
+    
     const initialLength = this.resources.length;
     this.resources = this.resources.filter(r => r.id !== id);
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
-    return this.resources.length < initialLength;
+    
+    if (this.resources.length < initialLength) {
+      this.logDatabaseChange('delete', 'resource', id, `Deleted resource: ${resource.title}`);
+      return true;
+    }
+    return false;
   }
   
   // Resource Attachments Methods
@@ -426,6 +499,8 @@ class DataService {
     };
     this.reviews = [...this.reviews, newReview];
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    
+    this.logDatabaseChange('create', 'review', newReview.id, `Created review by: ${newReview.name}`);
     return newReview;
   }
   
@@ -440,14 +515,24 @@ class DataService {
       ...this.reviews.slice(index + 1)
     ];
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    
+    this.logDatabaseChange('update', 'review', id, `Updated review by: ${updatedReview.name}`);
     return updatedReview;
   }
 
   deleteReview(id: string): boolean {
+    const review = this.reviews.find(r => r.id === id);
+    if (!review) return false;
+    
     const initialLength = this.reviews.length;
     this.reviews = this.reviews.filter(r => r.id !== id);
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
-    return this.reviews.length < initialLength;
+    
+    if (this.reviews.length < initialLength) {
+      this.logDatabaseChange('delete', 'review', id, `Deleted review by: ${review.name}`);
+      return true;
+    }
+    return false;
   }
 
   // About Content Methods
@@ -458,6 +543,8 @@ class DataService {
   updateAboutContent(content: Partial<AboutContent>): AboutContent {
     this.aboutContent = { ...this.aboutContent, ...content };
     localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(this.aboutContent));
+    
+    this.logDatabaseChange('update', 'about', '1', 'Updated about content');
     return this.aboutContent;
   }
   
@@ -474,6 +561,8 @@ class DataService {
     
     this.userDetails = [...this.userDetails, newUserDetails];
     localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    
+    this.logDatabaseChange('create', 'user', newUserDetails.id, `Created user: ${newUserDetails.name}`);
     return newUserDetails;
   }
   
@@ -481,11 +570,35 @@ class DataService {
     return this.userDetails.find(user => user.id === id);
   }
   
+  updateUserDetails(id: string, details: Partial<UserDetails>): UserDetails | undefined {
+    const index = this.userDetails.findIndex(u => u.id === id);
+    if (index === -1) return undefined;
+  
+    const updatedUserDetails = { ...this.userDetails[index], ...details };
+    this.userDetails = [
+      ...this.userDetails.slice(0, index),
+      updatedUserDetails,
+      ...this.userDetails.slice(index + 1)
+    ];
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    
+    this.logDatabaseChange('update', 'user', id, `Updated user: ${updatedUserDetails.name}`);
+    return updatedUserDetails;
+  }
+  
   deleteUserDetails(id: string): boolean {
+    const user = this.getUserDetailsById(id);
+    if (!user) return false;
+    
     const initialLength = this.userDetails.length;
     this.userDetails = this.userDetails.filter(u => u.id !== id);
     localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
-    return this.userDetails.length < initialLength;
+    
+    if (this.userDetails.length < initialLength) {
+      this.logDatabaseChange('delete', 'user', id, `Deleted user: ${user.name}`);
+      return true;
+    }
+    return false;
   }
 
   // Reset data to initial values (for testing)
@@ -495,12 +608,31 @@ class DataService {
     this.reviews = [...initialReviews];
     this.aboutContent = { ...initialAboutContent };
     this.userDetails = [];
+    this.databaseLogs = [];
     
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
     localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(this.aboutContent));
     localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    localStorage.setItem(DATABASE_LOGS_STORAGE_KEY, JSON.stringify(this.databaseLogs));
+    
+    this.logDatabaseChange('update', 'about', '1', 'Reset all data to defaults');
+  }
+  
+  // Download database as JSON file
+  downloadDatabase(): void {
+    const database = this.exportDatabase();
+    const blob = new Blob([database], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cosmic_galaxy_database.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }
 

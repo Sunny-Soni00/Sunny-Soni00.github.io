@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AdminCredentials, UserDetails } from '../models/DataModels';
 import { dataService } from '../services/DataService';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
 type UserRole = 'user' | 'admin';
 
@@ -17,7 +18,8 @@ interface AuthContextType {
   setShowUserLogin: (show: boolean) => void;
   showAdminLogin: boolean;
   setShowAdminLogin: (show: boolean) => void;
-  toggleRole: () => void; // Added toggleRole function
+  toggleRole: () => void;
+  updateProfilePicture: (imageUrl: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,6 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setIsAuthenticated(false);
     setUserRole('user');
+    setUserDetailsState(null);
+    localStorage.removeItem('currentUserDetailsId');
     toast.success('Successfully logged out');
   };
 
@@ -88,11 +92,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success('User details saved. You are now logged in!');
   };
 
-  // Add toggleRole function implementation
   const toggleRole = () => {
     const newRole = userRole === 'user' ? 'admin' : 'user';
     setUserRole(newRole);
     toast.success(`Switched to ${newRole} mode`);
+  };
+
+  const updateProfilePicture = (imageUrl: string) => {
+    if (!userDetails) {
+      toast.error("You must be logged in to update your profile picture");
+      return;
+    }
+
+    const updatedDetails = dataService.updateUserDetails(userDetails.id, {
+      profilePicture: imageUrl
+    });
+    
+    if (updatedDetails) {
+      setUserDetailsState(updatedDetails);
+      toast.success("Profile picture updated successfully");
+    }
   };
 
   return (
@@ -107,7 +126,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setShowUserLogin,
       showAdminLogin,
       setShowAdminLogin,
-      toggleRole // Added toggleRole to the context value
+      toggleRole,
+      updateProfilePicture
     }}>
       {children}
     </AuthContext.Provider>

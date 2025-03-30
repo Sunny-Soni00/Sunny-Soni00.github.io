@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
-import { MessageSquare, Upload, Send, Star, User, Trash2, File, FileText, Film, Music, Download, Edit, Check, FileImage } from 'lucide-react';
+import { MessageSquare, Upload, Send, Star, User, Trash2, File, FileText, Film, Music, Download, Edit, Check, FileImage, Eye } from 'lucide-react';
 import { dataService } from '../services/DataService';
 import { Review, Attachment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
 const Reviews = () => {
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -19,8 +20,9 @@ const Reviews = () => {
   const [rating, setRating] = useState(0);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editMessage, setEditMessage] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const { userRole, userDetails } = useAuth();
+  const { userRole, userDetails, isAuthenticated } = useAuth();
   
   useEffect(() => {
     // Load reviews from the data service
@@ -29,6 +31,9 @@ const Reviews = () => {
     // Pre-fill name and email if user details exist
     if (userDetails) {
       setName(userDetails.name || '');
+      if (userDetails.occupation) {
+        setRole(userDetails.occupation);
+      }
     }
   }, [userDetails]);
 
@@ -100,6 +105,11 @@ const Reviews = () => {
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isAuthenticated) {
+      toast.error('Please sign up or login to submit a review');
+      return;
+    }
+    
     if (!name.trim() || !role.trim() || !message.trim() || rating === 0) {
       toast.error('Please fill all required fields and set a rating');
       return;
@@ -126,7 +136,6 @@ const Reviews = () => {
     toast.success('Thank you for your feedback!');
     
     // Reset form
-    setName(userDetails?.name || '');
     setRole('');
     setMessage('');
     setRating(0);
@@ -139,6 +148,14 @@ const Reviews = () => {
       setReviews(reviews.filter(review => review.id !== id));
       toast.success('Review deleted successfully');
     }
+  };
+  
+  const openImagePreview = (url: string) => {
+    setPreviewImage(url);
+  };
+  
+  const closeImagePreview = () => {
+    setPreviewImage(null);
   };
 
   return (
@@ -184,9 +201,11 @@ const Reviews = () => {
                 )}
                 
                 <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-black/60 flex-shrink-0 flex items-center justify-center border border-white/20">
-                    <User className="w-5 h-5 text-gray-300" />
-                  </div>
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-neon-blue/30 text-white">
+                      {review.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <h3 className="font-semibold">{review.name}</h3>
                     <p className="text-xs text-gray-400">{review.role}</p>
@@ -236,20 +255,32 @@ const Reviews = () => {
                   <div className="mb-3 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
                     {review.attachments.map((attachment, idx) => (
                       <div key={idx} className="mb-2 last:mb-0">
-                        <a 
-                          href={attachment.url}
-                          download={attachment.name}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center p-2 bg-black/40 rounded hover:bg-black/60 transition-colors"
-                        >
+                        <div className="flex items-center p-2 bg-black/40 rounded group hover:bg-black/60 transition-colors">
                           {attachment.type === 'image' ? 
                             <FileImage className="w-4 h-4 mr-2 text-neon-pink" /> : 
                             <FileText className="w-4 h-4 mr-2 text-neon-blue" />
                           }
                           <span className="text-sm truncate flex-1">{attachment.name}</span>
-                          <Download className="w-4 h-4 text-gray-400" />
-                        </a>
+                          <div className="flex space-x-1">
+                            {attachment.type === 'image' && (
+                              <button
+                                onClick={() => openImagePreview(attachment.url)}
+                                className="p-1 rounded hover:bg-white/10"
+                                title="Preview"
+                              >
+                                <Eye className="w-4 h-4 text-neon-blue" />
+                              </button>
+                            )}
+                            <a 
+                              href={attachment.url}
+                              download={attachment.name}
+                              className="p-1 rounded hover:bg-white/10"
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4 text-neon-pink" />
+                            </a>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -286,6 +317,7 @@ const Reviews = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  disabled={!!userDetails}
                 />
               </div>
               <div>
@@ -378,6 +410,38 @@ const Reviews = () => {
           </form>
         </GlassCard>
       </div>
+      
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90"
+          onClick={closeImagePreview}
+        >
+          <div 
+            className="max-w-4xl max-h-[90vh] relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={previewImage} 
+              alt="Preview" 
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-neon-glow"
+            />
+            <button 
+              onClick={closeImagePreview}
+              className="absolute top-4 right-4 text-white hover:text-neon-blue bg-black/50 rounded-full p-2"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <a 
+              href={previewImage}
+              download
+              className="absolute bottom-4 right-4 text-white hover:text-neon-blue bg-black/50 rounded-full p-2"
+            >
+              <Download className="w-6 h-6" />
+            </a>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

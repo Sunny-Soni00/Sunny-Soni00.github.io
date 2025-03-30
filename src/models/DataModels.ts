@@ -78,5 +78,13 @@ export interface UserDetails {
   name: string;
   email: string;
   visitDate: string;
+  age?: number;
+  gender?: string;
+  profilePicture?: string;
+  bio?: string;
+  phone?: string;
+  occupation?: string;
+  interests?: string[];
 }
+
 
