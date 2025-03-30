@@ -1,5 +1,4 @@
-
-import { Project, Resource, Review, AboutContent, Attachment, UserDetails } from '../models/DataModels';
+import { Project, Resource, Review, AboutContent, Attachment, UserDetails, UserActivity, Comment } from '../models/DataModels';
 
 // Initial Projects Data
 const initialProjects: Project[] = [
@@ -209,13 +208,14 @@ const REVIEWS_STORAGE_KEY = 'cosmicApp_reviews';
 const ABOUT_STORAGE_KEY = 'cosmicApp_about';
 const USER_DETAILS_STORAGE_KEY = 'cosmicApp_userDetails';
 const DATABASE_LOGS_STORAGE_KEY = 'cosmicApp_databaseLogs';
+const COMMENTS_STORAGE_KEY = 'cosmicApp_comments';
 
 // Database Log Entry
 interface DatabaseLogEntry {
   id: string;
   timestamp: string;
   action: 'create' | 'update' | 'delete';
-  entity: 'project' | 'resource' | 'review' | 'user' | 'about';
+  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment';
   entityId: string;
   details: string;
 }
@@ -243,6 +243,7 @@ class DataService {
   private aboutContent: AboutContent;
   private userDetails: UserDetails[];
   private databaseLogs: DatabaseLogEntry[];
+  private comments: Comment[];
 
   constructor() {
     this.projects = initializeData<Project[]>(PROJECTS_STORAGE_KEY, initialProjects);
@@ -251,36 +252,38 @@ class DataService {
     this.aboutContent = initializeData<AboutContent>(ABOUT_STORAGE_KEY, initialAboutContent);
     this.userDetails = initializeData<UserDetails[]>(USER_DETAILS_STORAGE_KEY, []);
     this.databaseLogs = initializeData<DatabaseLogEntry[]>(DATABASE_LOGS_STORAGE_KEY, []);
+    this.comments = initializeData<Comment[]>(COMMENTS_STORAGE_KEY, []);
     
-    // Update older projects that might not have attachments array
+    // Update older projects that might not have attachments array or comments
     this.projects = this.projects.map(project => {
-      if (!project.attachments) {
-        return {
-          ...project,
-          attachments: []
-        };
-      }
+      if (!project.attachments) project.attachments = [];
+      if (!project.comments) project.comments = [];
+      if (!project.likes) project.likes = 0;
       return project;
     });
     
-    // Update older resources that might not have attachments array
+    // Update older resources that might not have attachments array or comments
     this.resources = this.resources.map(resource => {
-      if (!resource.attachments) {
-        return {
-          ...resource,
-          attachments: []
-        };
-      }
+      if (!resource.attachments) resource.attachments = [];
+      if (!resource.comments) resource.comments = [];
+      if (!resource.likes) resource.likes = 0;
       return resource;
     });
     
-    // Save updated projects and resources
+    // Update older reviews to include likes
+    this.reviews = this.reviews.map(review => {
+      if (!review.likes) review.likes = 0;
+      return review;
+    });
+    
+    // Save updated data
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
   }
 
   // Log database changes
-  private logDatabaseChange(action: 'create' | 'update' | 'delete', entity: 'project' | 'resource' | 'review' | 'user' | 'about', entityId: string, details: string) {
+  private logDatabaseChange(action: 'create' | 'update' | 'delete', entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment', entityId: string, details: string) {
     const logEntry: DatabaseLogEntry = {
       id: Date.now().toString(),
       timestamp: new Date().toISOString(),
@@ -326,7 +329,9 @@ class DataService {
   addProject(project: Omit<Project, 'id'>): Project {
     const newProject = {
       ...project,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      comments: [],
+      likes: 0
     };
     this.projects = [...this.projects, newProject];
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
@@ -412,7 +417,9 @@ class DataService {
     const newResource = {
       ...resource,
       id: Date.now().toString(),
-      attachments: resource.attachments || []
+      attachments: resource.attachments || [],
+      comments: [],
+      likes: 0
     };
     this.resources = [...this.resources, newResource];
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
@@ -490,12 +497,13 @@ class DataService {
     return [...this.reviews];
   }
 
-  addReview(review: Omit<Review, 'id' | 'date'>): Review {
+  addReview(review: Omit<Review, 'id' | 'date' | 'likes'>): Review {
     const now = new Date();
     const newReview = {
       ...review,
       id: Date.now().toString(),
-      date: 'Just now'
+      date: 'Just now',
+      likes: 0
     };
     this.reviews = [...this.reviews, newReview];
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
@@ -534,6 +542,146 @@ class DataService {
     }
     return false;
   }
+  
+  likeReview(id: string): boolean {
+    const review = this.reviews.find(r => r.id === id);
+    if (!review) return false;
+    
+    const updatedReview = { 
+      ...review, 
+      likes: (review.likes || 0) + 1 
+    };
+    
+    return !!this.updateReview(id, updatedReview);
+  }
+
+  // Comments Methods
+  getAllComments(): Comment[] {
+    return [...this.comments];
+  }
+  
+  getCommentById(id: string): Comment | undefined {
+    return this.comments.find(comment => comment.id === id);
+  }
+  
+  getCommentsByResourceId(resourceId: string): Comment[] {
+    return this.comments.filter(comment => comment.resourceId === resourceId);
+  }
+  
+  getCommentsByProjectId(projectId: string): Comment[] {
+    return this.comments.filter(comment => comment.projectId === projectId);
+  }
+  
+  addComment(comment: Omit<Comment, 'id' | 'timestamp'>): Comment {
+    const now = new Date();
+    const newComment = {
+      ...comment,
+      id: Date.now().toString(),
+      timestamp: now.toISOString(),
+      likes: 0
+    };
+    
+    this.comments = [...this.comments, newComment];
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
+    
+    // Update the relevant resource or project with the comment
+    if (newComment.resourceId) {
+      const resource = this.getResourceById(newComment.resourceId);
+      if (resource) {
+        const updatedResource = {
+          ...resource,
+          comments: [...(resource.comments || []), newComment]
+        };
+        this.updateResource(newComment.resourceId, updatedResource);
+      }
+    } else if (newComment.projectId) {
+      const project = this.getProjectById(newComment.projectId);
+      if (project) {
+        const updatedProject = {
+          ...project,
+          comments: [...(project.comments || []), newComment]
+        };
+        this.updateProject(newComment.projectId, updatedProject);
+      }
+    }
+    
+    this.logDatabaseChange('create', 'comment', newComment.id, `Comment added by: ${newComment.userName}`);
+    return newComment;
+  }
+  
+  updateComment(id: string, commentData: Partial<Comment>): Comment | undefined {
+    const index = this.comments.findIndex(c => c.id === id);
+    if (index === -1) return undefined;
+    
+    const originalComment = this.comments[index];
+    const updatedComment = { ...originalComment, ...commentData };
+    
+    this.comments = [
+      ...this.comments.slice(0, index),
+      updatedComment,
+      ...this.comments.slice(index + 1)
+    ];
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
+    
+    // Update the comment in the relevant resource or project
+    if (originalComment.resourceId) {
+      const resource = this.getResourceById(originalComment.resourceId);
+      if (resource && resource.comments) {
+        const updatedComments = resource.comments.map(c => 
+          c.id === id ? updatedComment : c
+        );
+        this.updateResource(originalComment.resourceId, { comments: updatedComments });
+      }
+    } else if (originalComment.projectId) {
+      const project = this.getProjectById(originalComment.projectId);
+      if (project && project.comments) {
+        const updatedComments = project.comments.map(c => 
+          c.id === id ? updatedComment : c
+        );
+        this.updateProject(originalComment.projectId, { comments: updatedComments });
+      }
+    }
+    
+    this.logDatabaseChange('update', 'comment', id, `Comment updated by: ${updatedComment.userName}`);
+    return updatedComment;
+  }
+  
+  deleteComment(id: string): boolean {
+    const comment = this.comments.find(c => c.id === id);
+    if (!comment) return false;
+    
+    // Remove from comments array
+    this.comments = this.comments.filter(c => c.id !== id);
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
+    
+    // Remove from the relevant resource or project
+    if (comment.resourceId) {
+      const resource = this.getResourceById(comment.resourceId);
+      if (resource && resource.comments) {
+        const updatedComments = resource.comments.filter(c => c.id !== id);
+        this.updateResource(comment.resourceId, { comments: updatedComments });
+      }
+    } else if (comment.projectId) {
+      const project = this.getProjectById(comment.projectId);
+      if (project && project.comments) {
+        const updatedComments = project.comments.filter(c => c.id !== id);
+        this.updateProject(comment.projectId, { comments: updatedComments });
+      }
+    }
+    
+    this.logDatabaseChange('delete', 'comment', id, `Comment deleted by: ${comment.userName}`);
+    return true;
+  }
+  
+  likeComment(id: string): boolean {
+    const index = this.comments.findIndex(c => c.id === id);
+    if (index === -1) return false;
+    
+    const comment = this.comments[index];
+    const updatedLikes = (comment.likes || 0) + 1;
+    
+    return !!this.updateComment(id, { likes: updatedLikes });
+  }
 
   // About Content Methods
   getAboutContent(): AboutContent {
@@ -557,6 +705,7 @@ class DataService {
     const newUserDetails = {
       ...details,
       id: Date.now().toString(),
+      activity: []
     };
     
     this.userDetails = [...this.userDetails, newUserDetails];
@@ -600,6 +749,31 @@ class DataService {
     }
     return false;
   }
+  
+  // User Activity Methods
+  getUserActivity(userId: string): UserActivity[] {
+    const user = this.getUserDetailsById(userId);
+    return user?.activity || [];
+  }
+  
+  addUserActivity(userId: string, activity: Omit<UserActivity, 'id' | 'timestamp'>): UserActivity | undefined {
+    const user = this.getUserDetailsById(userId);
+    if (!user) return undefined;
+    
+    const newActivity: UserActivity = {
+      ...activity,
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString()
+    };
+    
+    const updatedUser = {
+      ...user,
+      activity: [...(user.activity || []), newActivity]
+    };
+    
+    this.updateUserDetails(userId, updatedUser);
+    return newActivity;
+  }
 
   // Reset data to initial values (for testing)
   resetData(): void {
@@ -609,6 +783,7 @@ class DataService {
     this.aboutContent = { ...initialAboutContent };
     this.userDetails = [];
     this.databaseLogs = [];
+    this.comments = [];
     
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
@@ -616,19 +791,24 @@ class DataService {
     localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(this.aboutContent));
     localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
     localStorage.setItem(DATABASE_LOGS_STORAGE_KEY, JSON.stringify(this.databaseLogs));
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
     
     this.logDatabaseChange('update', 'about', '1', 'Reset all data to defaults');
   }
   
-  // Download database as JSON file
-  downloadDatabase(): void {
-    const database = this.exportDatabase();
-    const blob = new Blob([database], { type: 'application/json' });
+  // Download user data as JSON file
+  downloadUserData(): void {
+    const userData = {
+      userDetails: this.userDetails,
+      comments: this.comments
+    };
+    
+    const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'cosmic_galaxy_database.json';
+    a.download = 'cosmic_galaxy_user_data.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

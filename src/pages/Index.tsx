@@ -1,114 +1,212 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
 import DynamicQuote from '../components/DynamicQuote';
-import { ArrowRight, Star, Globe, Sparkles } from 'lucide-react';
+import RecentActivity from '../components/RecentActivity';
+import { 
+  Rocket, Cpu, Code, LineChart, LucideIcon, 
+  Brain, Database, Network, Layers, User, MessageSquare, 
+  Star, BookOpen, ArrowRight, Github, Linkedin, Twitter, Mail
+} from 'lucide-react';
 
-const Index = () => {
-  const orbitRef = useRef<HTMLDivElement>(null);
+interface FeatureProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  color: string;
+}
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!orbitRef.current) return;
-      
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      
-      const deltaX = (mouseX - centerX) / centerX * 10;
-      const deltaY = (mouseY - centerY) / centerY * 10;
-      
-      orbitRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-    };
+const Feature: React.FC<FeatureProps> = ({ icon, title, description, color }) => {
+  return (
+    <GlassCard className={`p-6 flex flex-col items-center text-center transition-all duration-300 hover:border-${color}`}>
+      <div className={`w-12 h-12 flex items-center justify-center rounded-full mb-4 bg-black/60 border border-${color}`}>
+        {icon}
+      </div>
+      <h3 className="text-lg font-bold mb-2">{title}</h3>
+      <p className="text-gray-300 text-sm">{description}</p>
+    </GlassCard>
+  );
+};
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-
+const Home = () => {
+  const features: FeatureProps[] = [
+    {
+      icon: <Brain className="w-6 h-6 text-neon-blue" />,
+      title: 'AI Integration',
+      description: 'Seamless AI solutions that enhance user experiences and automate complex tasks.',
+      color: 'neon-blue'
+    },
+    {
+      icon: <Code className="w-6 h-6 text-neon-purple" />,
+      title: 'Web Development',
+      description: 'Modern, responsive web applications built with cutting-edge technologies.',
+      color: 'neon-purple'
+    },
+    {
+      icon: <Layers className="w-6 h-6 text-neon-pink" />,
+      title: 'UI/UX Design',
+      description: 'Intuitive interfaces and engaging user experiences that inspire and delight.',
+      color: 'neon-pink'
+    },
+    {
+      icon: <Database className="w-6 h-6 text-neon-blue" />,
+      title: 'Data Science',
+      description: 'Transforming raw data into actionable insights and visualizations.',
+      color: 'neon-blue'
+    },
+    {
+      icon: <Network className="w-6 h-6 text-neon-purple" />,
+      title: 'Digital Transformation',
+      description: 'Strategic guidance to navigate the evolving technological landscape.',
+      color: 'neon-purple'
+    },
+    {
+      icon: <Cpu className="w-6 h-6 text-neon-pink" />,
+      title: 'IoT Solutions',
+      description: 'Connected systems that bridge the digital and physical worlds.',
+      color: 'neon-pink'
+    }
+  ];
+  
+  const stats = [
+    { icon: <Star className="w-5 h-5 text-neon-blue" />, value: '15+', label: 'Projects Completed' },
+    { icon: <MessageSquare className="w-5 h-5 text-neon-purple" />, value: '250+', label: 'Client Consultations' },
+    { icon: <User className="w-5 h-5 text-neon-pink" />, value: '1000+', label: 'Happy Users' },
+    { icon: <BookOpen className="w-5 h-5 text-neon-blue" />, value: '30+', label: 'Tech Resources' }
+  ];
+  
+  const socialLinks = [
+    { icon: <Github className="w-5 h-5" />, url: '#', label: 'GitHub' },
+    { icon: <Linkedin className="w-5 h-5" />, url: '#', label: 'LinkedIn' },
+    { icon: <Twitter className="w-5 h-5" />, url: '#', label: 'Twitter' },
+    { icon: <Mail className="w-5 h-5" />, url: 'mailto:example@example.com', label: 'Email' }
+  ];
+  
   return (
     <Layout>
-      <section className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 overflow-hidden">
-        {/* Orbit elements */}
-        <div ref={orbitRef} className="absolute inset-0 pointer-events-none">
-          <div className="circle-orbit w-[300px] h-[300px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="circle-orbit w-[500px] h-[500px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{animationDuration: '25s'}}></div>
-          <div className="circle-orbit w-[700px] h-[700px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{animationDuration: '35s'}}></div>
-          
-          <div className="planet-element w-16 h-16 top-1/3 left-1/4 animate-float"></div>
-          <div className="planet-element w-12 h-12 bottom-1/3 right-1/4 animate-float" style={{animationDelay: '1s'}}></div>
-          <div className="planet-element w-20 h-20 top-1/4 right-1/3 animate-float" style={{animationDelay: '2s'}}></div>
-        </div>
-
-        {/* Central UI */}
-        <div className="text-center z-10 max-w-3xl">
-          <div className="mb-4 flex justify-center">
-            <Star className="text-neon-blue animate-star-pulse h-8 w-8" />
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            <span className="neon-text">Welcome to</span><br />
-            <span className="text-white">the Cosmic Dreamscape</span>
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 pt-20 pb-24 flex flex-col lg:flex-row items-center gap-12">
+        <div className="lg:w-1/2">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            <span className="text-white">Cosmic</span> <span className="neon-text">Galaxy</span>
           </h1>
-          
-          <DynamicQuote />
-          
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <GlowingButton color="cyan">
-              <Link to="/projects" className="flex items-center">
-                <span>Explore Projects</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+          <p className="text-xl text-gray-300 mb-8">
+            Explore the intersection of technology and creativity in this digital constellation of innovative projects and resources.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <GlowingButton as={Link} to="/projects" className="flex items-center">
+              <Rocket className="w-5 h-5 mr-2" />
+              Explore Projects
             </GlowingButton>
-            <GlowingButton color="purple">
-              <Link to="/resources" className="flex items-center">
-                <span>Discover Resources</span>
-                <Sparkles className="ml-2 h-4 w-4" />
-              </Link>
+            <GlowingButton as={Link} to="/resources" color="pink" className="flex items-center">
+              <LineChart className="w-5 h-5 mr-2" />
+              Discover Resources
             </GlowingButton>
           </div>
         </div>
-        
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center">
-          <div className="animate-bounce">
-            <ArrowRight className="transform rotate-90 text-white opacity-70" />
+        <div className="lg:w-1/2 flex justify-center">
+          <div className="relative w-full max-w-md">
+            <div className="absolute inset-0 bg-neon-blue/20 rounded-full blur-3xl"></div>
+            <GlassCard className="relative p-6 z-10">
+              <DynamicQuote />
+            </GlassCard>
           </div>
         </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-card p-6 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center mb-4 neon-border">
-              <Globe className="text-neon-blue h-8 w-8" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Digital Cosmos</h3>
-            <p className="text-gray-300">Navigate through the digital universe of innovative projects and technological marvels.</p>
+      </div>
+      
+      {/* Features Section */}
+      <div className="bg-black/30 py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">
+              <span className="neon-text">Exploring</span> <span className="text-white">New Frontiers</span>
+            </h2>
+            <p className="text-gray-300 max-w-2xl mx-auto">
+              Discover a universe of technological possibilities, from artificial intelligence to immersive digital experiences.
+            </p>
           </div>
           
-          <div className="glass-card p-6 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center mb-4 neon-border-pink">
-              <Star className="text-neon-pink h-8 w-8" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Creative Exploration</h3>
-            <p className="text-gray-300">Explore the intersection of creativity and technology through cosmic design principles.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {features.map((feature, index) => (
+              <Feature key={index} {...feature} />
+            ))}
           </div>
           
-          <div className="glass-card p-6 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center mb-4 neon-border-purple">
-              <Sparkles className="text-neon-purple h-8 w-8" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Future Vision</h3>
-            <p className="text-gray-300">Glimpse into tomorrow's technological landscape through innovative concepts and projects.</p>
+          <div className="flex justify-center">
+            <GlowingButton as={Link} to="/about" color="purple" className="flex items-center">
+              <ArrowRight className="w-5 h-5 mr-2" />
+              Learn More About My Work
+            </GlowingButton>
           </div>
         </div>
-      </section>
+      </div>
+      
+      {/* Stats Section */}
+      <div className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <GlassCard key={index} className="p-6 text-center">
+                <div className="flex justify-center mb-3">
+                  {stat.icon}
+                </div>
+                <div className="text-3xl font-bold mb-1">{stat.value}</div>
+                <div className="text-gray-400 text-sm">{stat.label}</div>
+              </GlassCard>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Recent Activity Section */}
+      <div className="py-16 bg-black/30">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <GlassCard className="p-6">
+                <h2 className="text-2xl font-bold mb-4">
+                  <span className="neon-text">Let's</span> <span className="text-white">Connect</span>
+                </h2>
+                <p className="text-gray-300 mb-6">
+                  Whether you're looking for a collaboration, have a project idea, or just want to chat about the latest in technology,
+                  I'd love to hear from you. Connect with me through any of these platforms.
+                </p>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  {socialLinks.map((link, index) => (
+                    <a 
+                      key={index} 
+                      href={link.url} 
+                      className="flex items-center justify-center p-3 bg-black/40 border border-white/10 rounded-lg hover:border-neon-blue/70 hover:shadow-neon-glow transition-all"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      {link.icon}
+                      <span className="ml-2">{link.label}</span>
+                    </a>
+                  ))}
+                </div>
+                
+                <div className="text-center">
+                  <GlowingButton as={Link} to="/reviews" className="flex items-center mx-auto">
+                    <MessageSquare className="w-5 h-5 mr-2" />
+                    Share Your Feedback
+                  </GlowingButton>
+                </div>
+              </GlassCard>
+            </div>
+            
+            <div className="lg:col-span-1">
+              <RecentActivity />
+            </div>
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 };
 
-export default Index;
+export default Home;

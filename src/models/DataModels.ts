@@ -5,14 +5,28 @@ export interface Project {
   title: string;
   description: string;
   image: string;
-  attachments?: Attachment[]; // Replace single attachmentUrl with multiple attachments
+  attachments?: Attachment[]; 
   category: string;
   techStack: string[];
-  demoLink?: string; // Make demo link optional
-  repoLink?: string; // Make repo link optional
+  demoLink?: string;
+  repoLink?: string;
+  comments?: Comment[];
+  likes?: number;
 }
 
-// Attachment Model (new)
+// Comment Model (new)
+export interface Comment {
+  id: string;
+  text: string;
+  userName: string;
+  userId?: string;
+  timestamp: string;
+  resourceId?: string;
+  projectId?: string;
+  likes: number;
+}
+
+// Attachment Model
 export interface Attachment {
   id: string;
   name: string;
@@ -28,7 +42,9 @@ export interface Resource {
   type: string;
   category: string;
   link: string;
-  attachments?: Attachment[]; // Add attachments to resources
+  attachments?: Attachment[];
+  comments?: Comment[];
+  likes?: number;
 }
 
 // Review/Feedback Model
@@ -40,14 +56,15 @@ export interface Review {
   rating: number;
   date: string;
   image?: string;
-  attachments?: Attachment[]; // Add attachments to reviews
-  userId?: string; // To track which user submitted this review
+  attachments?: Attachment[];
+  userId?: string;
+  likes?: number;
 }
 
 // About Page Content Model
 export interface AboutContent {
   bio: string;
-  profileImage?: string; // Add profile image support
+  profileImage?: string;
   socialLinks: {
     linkedin?: string;
     github?: string;
@@ -85,6 +102,14 @@ export interface UserDetails {
   phone?: string;
   occupation?: string;
   interests?: string[];
+  activity?: UserActivity[];
 }
 
-
+// User Activity (new)
+export interface UserActivity {
+  id: string;
+  type: 'login' | 'comment' | 'like' | 'review' | 'view';
+  details: string;
+  timestamp: string;
+  relatedItemId?: string;
+}
