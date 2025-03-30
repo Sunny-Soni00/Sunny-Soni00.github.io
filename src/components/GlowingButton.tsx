@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface GlowingButtonProps {
   children: React.ReactNode;
@@ -7,6 +7,9 @@ interface GlowingButtonProps {
   className?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   type?: 'button' | 'submit' | 'reset';
+  as?: React.ComponentType<any>;
+  to?: string;
+  disabled?: boolean;
 }
 
 const GlowingButton = ({ 
@@ -14,7 +17,11 @@ const GlowingButton = ({
   color = 'cyan', 
   className = '',
   onClick,
-  type = 'button'
+  type = 'button',
+  as: Component,
+  to,
+  disabled = false,
+  ...rest
 }: GlowingButtonProps) => {
   
   const colorStyles = {
@@ -23,13 +30,25 @@ const GlowingButton = ({
     purple: 'border-neon-purple/70 shadow-neon-purple hover:border-neon-purple'
   };
   
+  const baseClasses = `px-5 py-2 rounded-full bg-black/40 border 
+    transition-all duration-300 text-white hover:bg-black/60
+    focus:outline-none focus:ring-2 active:scale-95 ${colorStyles[color]} ${className}`;
+  
+  if (Component && to) {
+    return (
+      <Component to={to} className={baseClasses} {...rest}>
+        {children}
+      </Component>
+    );
+  }
+  
   return (
     <button
       type={type}
       onClick={onClick}
-      className={`px-5 py-2 rounded-full bg-black/40 border 
-      transition-all duration-300 text-white hover:bg-black/60
-      focus:outline-none focus:ring-2 active:scale-95 ${colorStyles[color]} ${className}`}
+      className={baseClasses}
+      disabled={disabled}
+      {...rest}
     >
       {children}
     </button>

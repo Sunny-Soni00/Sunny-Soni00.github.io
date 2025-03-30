@@ -97,11 +97,11 @@ const Home = () => {
             Explore the intersection of technology and creativity in this digital constellation of innovative projects and resources.
           </p>
           <div className="flex flex-wrap gap-4">
-            <GlowingButton as={Link} to="/projects" className="flex items-center">
+            <GlowingButton to="/projects" as={Link} className="flex items-center">
               <Rocket className="w-5 h-5 mr-2" />
               Explore Projects
             </GlowingButton>
-            <GlowingButton as={Link} to="/resources" color="pink" className="flex items-center">
+            <GlowingButton to="/resources" as={Link} color="pink" className="flex items-center">
               <LineChart className="w-5 h-5 mr-2" />
               Discover Resources
             </GlowingButton>
@@ -136,7 +136,7 @@ const Home = () => {
           </div>
           
           <div className="flex justify-center">
-            <GlowingButton as={Link} to="/about" color="purple" className="flex items-center">
+            <GlowingButton to="/about" as={Link} color="purple" className="flex items-center">
               <ArrowRight className="w-5 h-5 mr-2" />
               Learn More About My Work
             </GlowingButton>
@@ -191,7 +191,7 @@ const Home = () => {
                 </div>
                 
                 <div className="text-center">
-                  <GlowingButton as={Link} to="/reviews" className="flex items-center mx-auto">
+                  <GlowingButton to="/reviews" as={Link} className="flex items-center mx-auto">
                     <MessageSquare className="w-5 h-5 mr-2" />
                     Share Your Feedback
                   </GlowingButton>

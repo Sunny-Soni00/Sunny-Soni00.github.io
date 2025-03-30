@@ -1,5 +1,15 @@
 import { Project, Resource, Review, AboutContent, Attachment, UserDetails, UserActivity, Comment } from '../models/DataModels';
 
+// Database Log Entry - adding this interface to fix the export issue
+export interface DatabaseLogEntry {
+  id: string;
+  timestamp: string;
+  action: 'create' | 'update' | 'delete';
+  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment';
+  entityId: string;
+  details: string;
+}
+
 // Initial Projects Data
 const initialProjects: Project[] = [
   {
@@ -210,16 +220,6 @@ const USER_DETAILS_STORAGE_KEY = 'cosmicApp_userDetails';
 const DATABASE_LOGS_STORAGE_KEY = 'cosmicApp_databaseLogs';
 const COMMENTS_STORAGE_KEY = 'cosmicApp_comments';
 
-// Database Log Entry
-interface DatabaseLogEntry {
-  id: string;
-  timestamp: string;
-  action: 'create' | 'update' | 'delete';
-  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment';
-  entityId: string;
-  details: string;
-}
-
 // Helper to initialize data from localStorage or defaults
 const initializeData = <T>(storageKey: string, initialData: T): T => {
   const storedData = localStorage.getItem(storageKey);
@@ -315,6 +315,30 @@ class DataService {
     };
     
     return JSON.stringify(database, null, 2);
+  }
+
+  // Download database as JSON file
+  downloadDatabase(): void {
+    const database = {
+      projects: this.projects,
+      resources: this.resources,
+      reviews: this.reviews,
+      aboutContent: this.aboutContent,
+      userDetails: this.userDetails,
+      databaseLogs: this.databaseLogs,
+      comments: this.comments
+    };
+    
+    const blob = new Blob([JSON.stringify(database, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cosmic_galaxy_database.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // Projects Methods
