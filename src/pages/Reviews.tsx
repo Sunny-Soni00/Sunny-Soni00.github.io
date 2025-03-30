@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
-import { MessageSquare, Upload, Send, Star, User, Trash2, File, FileText, Film, Music, Download, Edit, Check, FileImage, Eye } from 'lucide-react';
+import { MessageSquare, Upload, Send, Star, User, Trash2, File, FileText, Film, Music, Download, Edit, Check, FileImage, Eye, X } from 'lucide-react';
 import { dataService } from '../services/DataService';
 import { Review, Attachment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
