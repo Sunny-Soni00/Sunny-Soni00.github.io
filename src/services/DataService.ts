@@ -1,3 +1,4 @@
+
 import { Project, Resource, Review, UserDetails, DatabaseChange, AboutContent, AdminCredentials, Attachment, Comment } from '../models/DataModels';
 
 export class DataService {
@@ -503,4 +504,5 @@ export class DataService {
   }
 }
 
+// Create and export a singleton instance
 export const dataService = DataService.getInstance();

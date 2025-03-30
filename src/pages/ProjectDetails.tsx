@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -9,7 +8,7 @@ import {
   Send, Download, Eye, FileText, File, Image as ImageIcon,
   Film, Music
 } from 'lucide-react';
-import { DataService } from '../services/DataService';
+import { DataService, dataService } from '../services/DataService';
 import { Project, Comment, Attachment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -26,7 +25,7 @@ const ProjectDetails = () => {
   
   useEffect(() => {
     if (id) {
-      const projectData = DataService.getProjectById(id);
+      const projectData = dataService.getProjectById(id);
       if (projectData) {
         setProject(projectData);
       } else {
@@ -58,14 +57,14 @@ const ProjectDetails = () => {
         message: comment.trim()
       };
       
-      const success = DataService.addProjectComment(id, newComment);
+      const success = dataService.addProjectComment(id, newComment);
       
       if (success) {
         toast.success('Comment added successfully');
         setComment('');
         
         // Refresh project data
-        const updatedProject = DataService.getProjectById(id);
+        const updatedProject = dataService.getProjectById(id);
         if (updatedProject) {
           setProject(updatedProject);
         }
@@ -281,7 +280,7 @@ const ProjectDetails = () => {
                     rows={2}
                   />
                   <GlowingButton
-                    onClick={(e: React.FormEvent) => handleAddComment(e)}
+                    onClick={(e: any) => handleAddComment(e)}
                     className="self-end"
                     color="cyan"
                   >
