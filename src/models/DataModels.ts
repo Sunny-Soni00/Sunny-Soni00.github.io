@@ -113,3 +113,13 @@ export interface UserActivity {
   timestamp: string;
   relatedItemId?: string;
 }
+
+// Database Log Entry
+export interface DatabaseLogEntry {
+  id: string;
+  timestamp: string;
+  action: 'create' | 'update' | 'delete';
+  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment';
+  entityId: string;
+  details: string;
+}
