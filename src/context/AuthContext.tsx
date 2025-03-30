@@ -17,6 +17,7 @@ interface AuthContextType {
   setShowUserLogin: (show: boolean) => void;
   showAdminLogin: boolean;
   setShowAdminLogin: (show: boolean) => void;
+  toggleRole: () => void; // Added toggleRole function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +88,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success('User details saved. You are now logged in!');
   };
 
+  // Add toggleRole function implementation
+  const toggleRole = () => {
+    const newRole = userRole === 'user' ? 'admin' : 'user';
+    setUserRole(newRole);
+    toast.success(`Switched to ${newRole} mode`);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, 
@@ -98,7 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       showUserLogin,
       setShowUserLogin,
       showAdminLogin,
-      setShowAdminLogin
+      setShowAdminLogin,
+      toggleRole // Added toggleRole to the context value
     }}>
       {children}
     </AuthContext.Provider>
