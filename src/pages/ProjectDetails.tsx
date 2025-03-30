@@ -5,10 +5,11 @@ import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
 import { 
   ArrowLeft, Github, ExternalLink, Calendar, MessageSquare, 
-  Send, Download, Eye, FileText, File, Image as ImageIcon
+  Send, Download, Eye, FileText, File, Image as ImageIcon,
+  Film, Music
 } from 'lucide-react';
 import { dataService } from '../services/DataService';
-import { Project, Comment } from '../models/DataModels';
+import { Project, Comment, Attachment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
@@ -20,7 +21,7 @@ const ProjectDetails = () => {
   const [comment, setComment] = useState('');
   const [showImagePreview, setShowImagePreview] = useState<string | null>(null);
   
-  const { user, userRole } = useAuth();
+  const { userDetails, userRole } = useAuth();
   
   useEffect(() => {
     if (id) {
@@ -38,7 +39,7 @@ const ProjectDetails = () => {
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
+    if (!userDetails) {
       toast.error('Please login to add a comment');
       return;
     }
@@ -50,9 +51,9 @@ const ProjectDetails = () => {
     
     if (project && id) {
       const newComment: Partial<Comment> = {
-        userId: user.id,
-        userName: user.name || 'Anonymous',
-        userImage: user.profilePicture,
+        userId: userDetails.id,
+        userName: userDetails.name || 'Anonymous',
+        userImage: userDetails.profilePicture,
         message: comment.trim()
       };
       
@@ -70,6 +71,22 @@ const ProjectDetails = () => {
       } else {
         toast.error('Failed to add comment');
       }
+    }
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <ImageIcon className="w-4 h-4" />;
+    if (type.startsWith('video/')) return <Film className="w-4 h-4" />;
+    if (type.startsWith('audio/')) return <Music className="w-4 h-4" />;
+    if (type.includes('pdf')) return <FileText className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
+
+  const handlePreviewAttachment = (attachment: Attachment) => {
+    if (attachment.type === 'image') {
+      setShowImagePreview(attachment.url);
+    } else {
+      window.open(attachment.url, '_blank');
     }
   };
 
@@ -95,22 +112,6 @@ const ProjectDetails = () => {
       </Layout>
     );
   }
-
-  const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return <ImageIcon className="w-4 h-4" />;
-    if (type.startsWith('video/')) return <Film className="w-4 h-4" />;
-    if (type.startsWith('audio/')) return <Music className="w-4 h-4" />;
-    if (type.includes('pdf')) return <FileText className="w-4 h-4" />;
-    return <File className="w-4 h-4" />;
-  };
-
-  const handlePreviewAttachment = (attachment: Attachment) => {
-    if (attachment.type === 'image') {
-      setShowImagePreview(attachment.url);
-    } else {
-      window.open(attachment.url, '_blank');
-    }
-  };
 
   return (
     <Layout>
@@ -269,7 +270,7 @@ const ProjectDetails = () => {
                 Comments
               </h2>
               
-              {user ? (
+              {userDetails ? (
                 <div className="flex space-x-3 mb-6">
                   <textarea 
                     value={comment}
@@ -279,7 +280,7 @@ const ProjectDetails = () => {
                     rows={2}
                   />
                   <GlowingButton
-                    onClick={handleAddComment}
+                    onClick={(e) => handleAddComment(e)}
                     className="self-end"
                     color="cyan"
                   >

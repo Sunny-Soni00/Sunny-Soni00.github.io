@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -6,12 +7,15 @@ import GlowingButton from '../components/GlowingButton';
 import { 
   ArrowLeft, ExternalLink, Calendar, MessageSquare, 
   Send, Download, Eye, FileText, File, Image as ImageIcon,
-  Book, Link as LinkIcon, Star
+  Book, Link as LinkIcon, Star, X
 } from 'lucide-react';
-import { dataService } from '../services/DataService';
+import { DataService } from '../services/DataService';
 import { Resource, Comment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+
+// Initialize DataService
+const dataService = DataService.getInstance();
 
 const ResourceDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +25,7 @@ const ResourceDetails = () => {
   const [comment, setComment] = useState('');
   const [showImagePreview, setShowImagePreview] = useState<string | null>(null);
   
-  const { user, userRole } = useAuth();
+  const { userDetails, userRole } = useAuth();
   
   useEffect(() => {
     if (id) {
@@ -39,7 +43,7 @@ const ResourceDetails = () => {
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
+    if (!userDetails) {
       toast.error('Please login to add a comment');
       return;
     }
@@ -51,9 +55,9 @@ const ResourceDetails = () => {
     
     if (resource && id) {
       const newComment: Partial<Comment> = {
-        userId: user.id,
-        userName: user.name || 'Anonymous',
-        userImage: user.profilePicture,
+        userId: userDetails.id,
+        userName: userDetails.name || 'Anonymous',
+        userImage: userDetails.profilePicture,
         message: comment.trim()
       };
       
@@ -215,10 +219,10 @@ const ResourceDetails = () => {
           <form onSubmit={handleAddComment} className="mb-6">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full bg-black/60 flex-shrink-0 flex items-center justify-center border border-white/20">
-                {user?.profilePicture ? (
-                  <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+                {userDetails?.profilePicture ? (
+                  <img src={userDetails.profilePicture} alt={userDetails.name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-sm">{user?.name?.charAt(0).toUpperCase()}</span>
+                  <span className="text-sm">{userDetails?.name?.charAt(0).toUpperCase()}</span>
                 )}
               </div>
               <input

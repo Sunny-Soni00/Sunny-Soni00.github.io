@@ -1,4 +1,4 @@
-import { Project, Resource, Review, UserDetails, DatabaseChange, AboutContent, AdminCredentials } from '../models/DataModels';
+import { Project, Resource, Review, UserDetails, DatabaseChange, AboutContent, AdminCredentials, Attachment } from '../models/DataModels';
 
 export class DataService {
   private static instance: DataService;
@@ -313,6 +313,11 @@ export class DataService {
     return userDetails ? JSON.parse(userDetails) : this.initialUserDetails;
   }
 
+  getUserDetailsById(id: string): UserDetails | undefined {
+    const userDetails = this.getAllUserDetails();
+    return userDetails.find(user => user.id === id);
+  }
+
   addUserDetails(user: Omit<UserDetails, 'id'>): UserDetails {
     const userDetails = this.getAllUserDetails();
     const newUser = { ...user, id: Date.now().toString() };
@@ -398,6 +403,26 @@ export class DataService {
     return changes ? JSON.parse(changes) : [];
   }
 
+  // Add method for database export
+  downloadDatabase() {
+    const data = {
+      projects: this.getAllProjects(),
+      resources: this.getAllResources(),
+      reviews: this.getAllReviews(),
+      userDetails: this.getAllUserDetails(),
+      databaseChanges: this.getAllDatabaseChanges()
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cosmic_dreamscape_db_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  }
+
   // Add missing method for recent activity
   getRecentActivity(limit: number = 5) {
     // Get combined recent projects, resources, and reviews
@@ -429,7 +454,7 @@ export class DataService {
   }
 
   // Add missing method for project comments
-  addProjectComment(projectId: string, comment: any) {
+  addProjectComment(projectId: string, comment: Partial<Comment>) {
     const projects = this.getAllProjects();
     const projectIndex = projects.findIndex(p => p.id === projectId);
     
@@ -439,7 +464,7 @@ export class DataService {
       }
       
       projects[projectIndex].comments?.push({
-        ...comment,
+        ...(comment as Comment),
         id: Date.now().toString(),
         date: new Date().toISOString()
       });
@@ -452,7 +477,7 @@ export class DataService {
   }
 
   // Add missing method for resource comments
-  addResourceComment(resourceId: string, comment: any) {
+  addResourceComment(resourceId: string, comment: Partial<Comment>) {
     const resources = this.getAllResources();
     const resourceIndex = resources.findIndex(r => r.id === resourceId);
     
@@ -462,7 +487,7 @@ export class DataService {
       }
       
       resources[resourceIndex].comments?.push({
-        ...comment,
+        ...(comment as Comment),
         id: Date.now().toString(),
         date: new Date().toISOString()
       });
@@ -474,3 +499,6 @@ export class DataService {
     return false;
   }
 }
+
+// Export the singleton instance
+export const dataService = DataService.getInstance();
