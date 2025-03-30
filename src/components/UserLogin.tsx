@@ -23,6 +23,11 @@ const UserLogin = () => {
   const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 500000) { // Limit to 500KB
+        toast.error('Profile picture is too large. Please select an image under 500KB.');
+        return;
+      }
+      
       setProfilePicture(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -41,19 +46,31 @@ const UserLogin = () => {
       return;
     }
     
-    // The id will be added by the DataService
-    setUserDetails({
-      name,
-      email,
-      visitDate: new Date().toISOString(),
-      age: age ? parseInt(age) : undefined,
-      gender: gender || undefined,
-      phone: phone || undefined,
-      occupation: occupation || undefined,
-      bio: bio || undefined,
-      interests: interests ? interests.split(',').map(i => i.trim()) : undefined,
-      profilePicture: profilePicturePreview || undefined
-    });
+    try {
+      // Get file type from profile picture
+      let profilePictureType = undefined;
+      if (profilePicture) {
+        profilePictureType = `.${profilePicture.name.split('.').pop()}`;
+      }
+      
+      // The id will be added by the DataService
+      setUserDetails({
+        name,
+        email,
+        visitDate: new Date().toISOString(),
+        age: age ? parseInt(age) : undefined,
+        gender: gender || undefined,
+        phone: phone || undefined,
+        occupation: occupation || undefined,
+        bio: bio || undefined,
+        interests: interests ? interests.split(',').map(i => i.trim()) : undefined,
+        profilePicture: profilePicturePreview || undefined,
+        profilePictureType
+      });
+    } catch (error) {
+      console.error("Error during signup:", error);
+      setError('An error occurred during signup. Please try again.');
+    }
   };
 
   return (
@@ -212,7 +229,7 @@ const UserLogin = () => {
           <div>
             <label className="block text-sm font-medium mb-1 flex items-center">
               <FileImage className="w-4 h-4 mr-2 text-neon-blue" />
-              Profile Picture
+              Profile Picture (max 500KB)
             </label>
             <div className="flex items-center space-x-4">
               <input 

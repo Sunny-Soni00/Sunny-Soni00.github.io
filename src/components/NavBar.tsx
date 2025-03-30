@@ -3,14 +3,13 @@ import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
-import { Search, User, Menu, X, Shield, LogIn, LogOut, FileDown, UserPlus } from 'lucide-react';
+import { User, Menu, X, Shield, LogIn, LogOut, FileDown, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { dataService } from '../services/DataService';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { userRole, isAuthenticated, userDetails, logout, setShowUserLogin, setShowAdminLogin } = useAuth();
 
@@ -21,20 +20,6 @@ const NavBar = () => {
     { name: 'RESOURCES', path: '/resources' },
     { name: 'REVIEWS', path: '/reviews' },
   ];
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      toast.info(`Searching for: ${searchTerm}`);
-      // In a real app, you would implement actual search logic here
-      setSearchTerm('');
-    }
-  };
-
-  const handleDownloadDatabase = () => {
-    dataService.downloadDatabase();
-    toast.success('Database downloaded successfully');
-  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10">
@@ -74,19 +59,6 @@ const NavBar = () => {
           </nav>
           
           <div className="hidden md:flex items-center space-x-4">
-            <form onSubmit={handleSearch} className="relative">
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-3 py-1.5 w-40 bg-black/40 border border-white/10 rounded-full text-sm focus:outline-none focus:border-neon-blue focus:shadow-neon-glow text-white"
-              />
-              <button type="submit" className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 h-4 w-4">
-                <Search className="h-4 w-4" />
-              </button>
-            </form>
-            
             {isAuthenticated ? (
               <div className="relative">
                 <button 
@@ -107,15 +79,6 @@ const NavBar = () => {
                 
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-black/90 border border-white/10 rounded-md shadow-neon-glow z-50">
-                    {userRole === 'admin' && (
-                      <button 
-                        onClick={handleDownloadDatabase}
-                        className="flex w-full items-center px-4 py-2 text-sm text-white hover:bg-neon-blue/20 transition-colors"
-                      >
-                        <FileDown className="h-4 w-4 mr-2" />
-                        Download Database
-                      </button>
-                    )}
                     <button 
                       onClick={() => {
                         logout();
@@ -191,19 +154,6 @@ const NavBar = () => {
               </NavLink>
             )}
             <div className="pt-4 border-t border-white/10">
-              <form onSubmit={handleSearch} className="relative mb-4">
-                <input 
-                  type="text" 
-                  placeholder="Search..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-3 py-2 w-full bg-black/40 border border-white/10 rounded-full text-sm focus:outline-none focus:border-neon-blue focus:shadow-neon-glow text-white"
-                />
-                <button type="submit" className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 h-4 w-4">
-                  <Search className="h-4 w-4" />
-                </button>
-              </form>
-              
               {isAuthenticated ? (
                 <div className="space-y-2">
                   <div className="flex items-center space-x-3 p-2 bg-black/40 rounded-md">
@@ -221,16 +171,6 @@ const NavBar = () => {
                       <div className="text-xs text-gray-400">{userRole === 'admin' ? 'Administrator' : 'User'}</div>
                     </div>
                   </div>
-                  
-                  {userRole === 'admin' && (
-                    <button 
-                      onClick={handleDownloadDatabase}
-                      className="w-full flex items-center justify-center neon-button py-2"
-                    >
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Download Database
-                    </button>
-                  )}
                   
                   <button 
                     onClick={logout}

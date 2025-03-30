@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -18,7 +19,7 @@ const GlowingButton = ({
   className = '',
   onClick,
   type = 'button',
-  as: Component,
+  as,
   to,
   disabled = false,
   ...rest
@@ -34,11 +35,11 @@ const GlowingButton = ({
     transition-all duration-300 text-white hover:bg-black/60
     focus:outline-none focus:ring-2 active:scale-95 ${colorStyles[color]} ${className}`;
   
-  if (Component && to) {
+  if (to) {
     return (
-      <Component to={to} className={baseClasses} {...rest}>
+      <Link to={to} className={baseClasses} {...rest}>
         {children}
-      </Component>
+      </Link>
     );
   }
   

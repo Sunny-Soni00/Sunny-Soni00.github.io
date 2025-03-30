@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { AdminCredentials, UserDetails, UserActivity, Comment } from '../models/DataModels';
+import { AdminCredentials, UserDetails, UserActivity, Comment, Reply, Attachment } from '../models/DataModels';
 import { dataService } from '../services/DataService';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import GlowingButton from '../components/GlowingButton';
@@ -19,13 +19,19 @@ interface AuthContextType {
   showAdminLogin: boolean;
   setShowAdminLogin: (show: boolean) => void;
   toggleRole: () => void;
-  updateProfilePicture: (imageUrl: string) => void;
-  addComment: (comment: Omit<Comment, 'id' | 'timestamp' | 'likes'>, anonymous?: boolean) => Comment | undefined;
+  updateProfilePicture: (imageUrl: string, fileType: string) => void;
+  addComment: (comment: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'likedBy' | 'replies'>, anonymous?: boolean) => Comment | undefined;
   updateComment: (commentId: string, text: string) => Comment | undefined;
   deleteComment: (commentId: string) => boolean;
   likeComment: (commentId: string) => boolean;
+  addReply: (commentId: string, reply: Omit<Reply, 'id' | 'timestamp' | 'likes' | 'likedBy'>) => Reply | undefined;
+  deleteReply: (commentId: string, replyId: string) => boolean;
+  likeReply: (commentId: string, replyId: string) => boolean;
+  addCommentAttachment: (commentId: string, attachment: Omit<Attachment, 'id'>) => Attachment | null;
   recordActivity: (activity: Omit<UserActivity, 'id' | 'timestamp'>) => void;
   askUserName: () => Promise<string | null>;
+  hasLikedComment: (commentId: string) => boolean;
+  hasLikedReply: (commentId: string, replyId: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,7 +51,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [showNamePopup, setShowNamePopup] = useState<boolean>(false);
   const [nameInputCallback, setNameInputCallback] = useState<((name: string | null) => void) | null>(null);
 
-  // Load auth state from localStorage on initial render
   useEffect(() => {
     const savedAuth = localStorage.getItem('isAuthenticated');
     const savedRole = localStorage.getItem('userRole') as UserRole | null;
@@ -62,7 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Save auth state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('isAuthenticated', isAuthenticated.toString());
     localStorage.setItem('userRole', userRole);
@@ -73,13 +77,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isAuthenticated, userRole, userDetails]);
 
   const login = (userId: string, password: string) => {
-    if (userId === ADMIN_CREDENTIALS.userId && password === ADMIN_CREDENTIALS.password) {
-      setIsAuthenticated(true);
-      setUserRole('admin');
-      toast.success('Successfully logged in as admin');
-      return true;
-    } else {
-      toast.error('Invalid credentials');
+    try {
+      if (userId === ADMIN_CREDENTIALS.userId && password === ADMIN_CREDENTIALS.password) {
+        setIsAuthenticated(true);
+        setUserRole('admin');
+        toast.success('Successfully logged in as admin');
+        return true;
+      } else {
+        toast.error('Invalid credentials');
+        return false;
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error('An error occurred during login');
       return false;
     }
   };
@@ -93,18 +103,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const saveUserDetails = (details: Omit<UserDetails, 'id'>) => {
-    const savedDetails = dataService.addUserDetails(details);
-    setUserDetailsState(savedDetails);
-    setShowUserLogin(false);
-    setIsAuthenticated(true);
-    
-    // Record login activity
-    recordActivity({
-      type: 'login',
-      details: 'User logged in',
-    });
-    
-    toast.success('User details saved. You are now logged in!');
+    try {
+      let profilePictureType = undefined;
+      if (details.profilePicture) {
+        const match = details.profilePicture.match(/data:image\/(\w+);/);
+        profilePictureType = match ? `.${match[1]}` : undefined;
+      }
+
+      const enhancedDetails = {
+        ...details,
+        profilePictureType
+      };
+
+      const savedDetails = dataService.addUserDetails(enhancedDetails);
+      setUserDetailsState(savedDetails);
+      setShowUserLogin(false);
+      setIsAuthenticated(true);
+      
+      recordActivity({
+        type: 'login',
+        details: 'User logged in',
+      });
+      
+      toast.success('User details saved. You are now logged in!');
+    } catch (error) {
+      console.error("Error saving user details:", error);
+      toast.error('Could not save user details. Please try again.');
+    }
   };
 
   const toggleRole = () => {
@@ -113,46 +138,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success(`Switched to ${newRole} mode`);
   };
 
-  const updateProfilePicture = (imageUrl: string) => {
+  const updateProfilePicture = (imageUrl: string, fileType: string) => {
     if (!userDetails) {
       toast.error("You must be logged in to update your profile picture");
       return;
     }
 
-    const updatedDetails = dataService.updateUserDetails(userDetails.id, {
-      profilePicture: imageUrl
-    });
-    
-    if (updatedDetails) {
-      setUserDetailsState(updatedDetails);
-      toast.success("Profile picture updated successfully");
+    try {
+      const updatedDetails = dataService.updateUserDetails(userDetails.id, {
+        profilePicture: imageUrl,
+        profilePictureType: fileType
+      });
+      
+      if (updatedDetails) {
+        setUserDetailsState(updatedDetails);
+        toast.success("Profile picture updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating profile picture:", error);
+      toast.error("Failed to update profile picture");
     }
   };
   
   const addComment = (
-    comment: Omit<Comment, 'id' | 'timestamp' | 'likes'>, 
+    comment: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'likedBy' | 'replies'>, 
     anonymous: boolean = false
   ): Comment | undefined => {
     let userName = anonymous ? comment.userName : userDetails?.name || 'Anonymous';
     let userId = userDetails?.id;
     
-    const newComment = dataService.addComment({
-      ...comment,
-      userName,
-      userId,
-      likes: 0
-    });
-    
-    if (newComment && userDetails) {
-      // Record activity
-      recordActivity({
-        type: 'comment',
-        details: `Commented on ${comment.projectId ? 'project' : 'resource'}`,
-        relatedItemId: comment.projectId || comment.resourceId,
+    try {
+      const newComment = dataService.addComment({
+        ...comment,
+        userName,
+        userId,
+        likes: 0,
+        likedBy: [],
+        replies: []
       });
+      
+      if (newComment && userDetails) {
+        recordActivity({
+          type: 'comment',
+          details: `Commented on ${comment.projectId ? 'project' : 'resource'}`,
+          relatedItemId: comment.projectId || comment.resourceId,
+        });
+      }
+      
+      return newComment;
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast.error("Failed to add comment");
+      return undefined;
     }
-    
-    return newComment;
   };
   
   const updateComment = (commentId: string, text: string): Comment | undefined => {
@@ -164,21 +202,113 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const likeComment = (commentId: string): boolean => {
-    const success = dataService.likeComment(commentId);
-    
-    if (success && userDetails) {
+    if (!userDetails) {
+      toast.error("You must be logged in to like a comment");
+      return false;
+    }
+
+    try {
       const comment = dataService.getCommentById(commentId);
-      if (comment) {
-        // Record activity
+      if (comment && comment.likedBy?.includes(userDetails.id)) {
+        toast.error("You've already liked this comment");
+        return false;
+      }
+
+      const success = dataService.likeComment(commentId, userDetails.id);
+      
+      if (success && userDetails) {
+        const comment = dataService.getCommentById(commentId);
+        if (comment) {
+          recordActivity({
+            type: 'like',
+            details: `Liked a comment`,
+            relatedItemId: comment.projectId || comment.resourceId,
+          });
+        }
+      }
+      
+      return success;
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      toast.error("Failed to like comment");
+      return false;
+    }
+  };
+
+  const addReply = (
+    commentId: string,
+    reply: Omit<Reply, 'id' | 'timestamp' | 'likes' | 'likedBy'>
+  ): Reply | undefined => {
+    if (!userDetails) {
+      toast.error("You must be logged in to reply to a comment");
+      return undefined;
+    }
+
+    try {
+      const newReply = dataService.addReply(commentId, {
+        ...reply,
+        userId: userDetails.id,
+        likes: 0,
+        likedBy: []
+      });
+
+      if (newReply) {
         recordActivity({
-          type: 'like',
-          details: `Liked a comment`,
-          relatedItemId: comment.projectId || comment.resourceId,
+          type: 'reply',
+          details: `Replied to a comment`,
+          relatedItemId: commentId,
         });
       }
+
+      return newReply;
+    } catch (error) {
+      console.error("Error adding reply:", error);
+      toast.error("Failed to add reply");
+      return undefined;
     }
-    
-    return success;
+  };
+
+  const deleteReply = (commentId: string, replyId: string): boolean => {
+    try {
+      return dataService.deleteReply(commentId, replyId);
+    } catch (error) {
+      console.error("Error deleting reply:", error);
+      toast.error("Failed to delete reply");
+      return false;
+    }
+  };
+
+  const likeReply = (commentId: string, replyId: string): boolean => {
+    if (!userDetails) {
+      toast.error("You must be logged in to like a reply");
+      return false;
+    }
+
+    try {
+      const comment = dataService.getCommentById(commentId);
+      const reply = comment?.replies?.find(r => r.id === replyId);
+      
+      if (reply && reply.likedBy?.includes(userDetails.id)) {
+        toast.error("You've already liked this reply");
+        return false;
+      }
+
+      return dataService.likeReply(commentId, replyId, userDetails.id);
+    } catch (error) {
+      console.error("Error liking reply:", error);
+      toast.error("Failed to like reply");
+      return false;
+    }
+  };
+
+  const addCommentAttachment = (commentId: string, attachment: Omit<Attachment, 'id'>): Attachment | null => {
+    try {
+      return dataService.addCommentAttachment(commentId, attachment);
+    } catch (error) {
+      console.error("Error adding comment attachment:", error);
+      toast.error("Failed to add attachment");
+      return null;
+    }
   };
   
   const recordActivity = (activity: Omit<UserActivity, 'id' | 'timestamp'>) => {
@@ -220,12 +350,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateComment,
       deleteComment,
       likeComment,
+      addReply,
+      deleteReply,
+      likeReply,
+      addCommentAttachment,
       recordActivity,
-      askUserName
+      askUserName,
+      hasLikedComment,
+      hasLikedReply
     }}>
       {children}
       
-      {/* Name Input Popup */}
       {showNamePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
           <div className="bg-black/90 border border-white/20 p-6 rounded-lg shadow-lg max-w-md w-full">

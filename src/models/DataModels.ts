@@ -14,7 +14,7 @@ export interface Project {
   likes?: number;
 }
 
-// Comment Model (new)
+// Comment Model (enhanced)
 export interface Comment {
   id: string;
   text: string;
@@ -24,6 +24,20 @@ export interface Comment {
   resourceId?: string;
   projectId?: string;
   likes: number;
+  likedBy?: string[]; // Track users who liked this comment
+  replies?: Reply[]; // Add support for replies
+  attachments?: Attachment[]; // Add support for attachments in comments
+}
+
+// Reply Model (new)
+export interface Reply {
+  id: string;
+  text: string;
+  userName: string;
+  userId?: string;
+  timestamp: string;
+  likes: number;
+  likedBy?: string[]; // Track users who liked this reply
 }
 
 // Attachment Model
@@ -32,6 +46,7 @@ export interface Attachment {
   name: string;
   url: string;
   type: string; // 'image', 'document', 'other'
+  fileType?: string; // Store file extension (.jpg, .png, etc)
 }
 
 // Resource Model
@@ -59,6 +74,7 @@ export interface Review {
   attachments?: Attachment[];
   userId?: string;
   likes?: number;
+  likedBy?: string[]; // Track users who liked this review
 }
 
 // About Page Content Model
@@ -98,6 +114,7 @@ export interface UserDetails {
   age?: number;
   gender?: string;
   profilePicture?: string;
+  profilePictureType?: string; // Store only file type
   bio?: string;
   phone?: string;
   occupation?: string;
@@ -105,10 +122,10 @@ export interface UserDetails {
   activity?: UserActivity[];
 }
 
-// User Activity (new)
+// User Activity (enhanced)
 export interface UserActivity {
   id: string;
-  type: 'login' | 'comment' | 'like' | 'review' | 'view';
+  type: 'login' | 'comment' | 'like' | 'review' | 'view' | 'reply';
   details: string;
   timestamp: string;
   relatedItemId?: string;
@@ -119,7 +136,7 @@ export interface DatabaseLogEntry {
   id: string;
   timestamp: string;
   action: 'create' | 'update' | 'delete';
-  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment';
+  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment' | 'reply';
   entityId: string;
   details: string;
 }

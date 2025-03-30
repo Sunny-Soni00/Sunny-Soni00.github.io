@@ -1,11 +1,11 @@
-import { Project, Resource, Review, AboutContent, Attachment, UserDetails, UserActivity, Comment } from '../models/DataModels';
+import { Project, Resource, Review, AboutContent, Attachment, UserDetails, UserActivity, Comment, Reply } from '../models/DataModels';
 
 // Database Log Entry - adding this interface to fix the export issue
 export interface DatabaseLogEntry {
   id: string;
   timestamp: string;
   action: 'create' | 'update' | 'delete';
-  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment';
+  entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment' | 'reply';
   entityId: string;
   details: string;
 }
@@ -273,17 +273,26 @@ class DataService {
     // Update older reviews to include likes
     this.reviews = this.reviews.map(review => {
       if (!review.likes) review.likes = 0;
+      if (!review.likedBy) review.likedBy = [];
       return review;
+    });
+    
+    // Update comments to include likes tracking and replies
+    this.comments = this.comments.map(comment => {
+      if (!comment.likedBy) comment.likedBy = [];
+      if (!comment.replies) comment.replies = [];
+      return comment;
     });
     
     // Save updated data
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
   }
 
   // Log database changes
-  private logDatabaseChange(action: 'create' | 'update' | 'delete', entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment', entityId: string, details: string) {
+  private logDatabaseChange(action: 'create' | 'update' | 'delete', entity: 'project' | 'resource' | 'review' | 'user' | 'about' | 'comment' | 'reply', entityId: string, details: string) {
     const logEntry: DatabaseLogEntry = {
       id: Date.now().toString(),
       timestamp: new Date().toISOString(),
@@ -335,6 +344,41 @@ class DataService {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'cosmic_galaxy_database.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Download user database only
+  downloadUserDatabase(): void {
+    // Create a simplified user data object that doesn't include actual images
+    const simplifiedUserDetails = this.userDetails.map(user => {
+      const { profilePicture, ...rest } = user;
+      return {
+        ...rest,
+        // Include file type instead of actual image data
+        profilePictureType: user.profilePictureType || (user.profilePicture ? 'image' : undefined)
+      };
+    });
+    
+    // Get user comments
+    const userComments = this.comments.filter(comment => 
+      this.userDetails.some(user => user.id === comment.userId)
+    );
+    
+    const userData = {
+      userDetails: simplifiedUserDetails,
+      comments: userComments,
+      activities: this.userDetails.flatMap(user => user.activity || [])
+    };
+    
+    const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cosmic_galaxy_user_data.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -400,9 +444,17 @@ class DataService {
     const project = this.getProjectById(projectId);
     if (!project) return null;
     
+    // Extract file type
+    let fileType = undefined;
+    if (attachment.url && attachment.url.startsWith('data:')) {
+      const match = attachment.url.match(/data:[^/]+\/([^;]+);/);
+      fileType = match ? `.${match[1]}` : undefined;
+    }
+    
     const newAttachment = {
       ...attachment,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      fileType
     };
     
     const attachments = project.attachments || [];
@@ -488,9 +540,17 @@ class DataService {
     const resource = this.getResourceById(resourceId);
     if (!resource) return null;
     
+    // Extract file type
+    let fileType = undefined;
+    if (attachment.url && attachment.url.startsWith('data:')) {
+      const match = attachment.url.match(/data:[^/]+\/([^;]+);/);
+      fileType = match ? `.${match[1]}` : undefined;
+    }
+    
     const newAttachment = {
       ...attachment,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      fileType
     };
     
     const attachments = resource.attachments || [];
@@ -521,13 +581,14 @@ class DataService {
     return [...this.reviews];
   }
 
-  addReview(review: Omit<Review, 'id' | 'date' | 'likes'>): Review {
+  addReview(review: Omit<Review, 'id' | 'date' | 'likes' | 'likedBy'>): Review {
     const now = new Date();
     const newReview = {
       ...review,
       id: Date.now().toString(),
       date: 'Just now',
-      likes: 0
+      likes: 0,
+      likedBy: []
     };
     this.reviews = [...this.reviews, newReview];
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
@@ -567,13 +628,19 @@ class DataService {
     return false;
   }
   
-  likeReview(id: string): boolean {
+  likeReview(id: string, userId: string): boolean {
     const review = this.reviews.find(r => r.id === id);
     if (!review) return false;
     
+    // Check if user already liked this review
+    if (review.likedBy?.includes(userId)) {
+      return false;
+    }
+    
     const updatedReview = { 
       ...review, 
-      likes: (review.likes || 0) + 1 
+      likes: (review.likes || 0) + 1,
+      likedBy: [...(review.likedBy || []), userId]
     };
     
     return !!this.updateReview(id, updatedReview);
@@ -602,7 +669,9 @@ class DataService {
       ...comment,
       id: Date.now().toString(),
       timestamp: now.toISOString(),
-      likes: 0
+      likes: comment.likes || 0,
+      likedBy: comment.likedBy || [],
+      replies: comment.replies || []
     };
     
     this.comments = [...this.comments, newComment];
@@ -697,14 +766,248 @@ class DataService {
     return true;
   }
   
-  likeComment(id: string): boolean {
+  likeComment(id: string, userId: string): boolean {
     const index = this.comments.findIndex(c => c.id === id);
     if (index === -1) return false;
     
     const comment = this.comments[index];
-    const updatedLikes = (comment.likes || 0) + 1;
     
-    return !!this.updateComment(id, { likes: updatedLikes });
+    // Check if user already liked the comment
+    if (comment.likedBy?.includes(userId)) {
+      return false;
+    }
+    
+    const updatedLikes = (comment.likes || 0) + 1;
+    const updatedLikedBy = [...(comment.likedBy || []), userId];
+    
+    return !!this.updateComment(id, { 
+      likes: updatedLikes,
+      likedBy: updatedLikedBy
+    });
+  }
+  
+  // Replies Methods
+  addReply(commentId: string, reply: Omit<Reply, 'id' | 'timestamp'>): Reply | undefined {
+    const commentIndex = this.comments.findIndex(c => c.id === commentId);
+    if (commentIndex === -1) return undefined;
+    
+    const comment = this.comments[commentIndex];
+    
+    const newReply: Reply = {
+      ...reply,
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      likes: 0,
+      likedBy: []
+    };
+    
+    const updatedReplies = [...(comment.replies || []), newReply];
+    
+    const updatedComment = {
+      ...comment,
+      replies: updatedReplies
+    };
+    
+    this.comments = [
+      ...this.comments.slice(0, commentIndex),
+      updatedComment,
+      ...this.comments.slice(commentIndex + 1)
+    ];
+    
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
+    
+    // Also update the reply in the project/resource
+    if (comment.projectId) {
+      const project = this.getProjectById(comment.projectId);
+      if (project && project.comments) {
+        const updatedProjectComments = project.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateProject(comment.projectId, { comments: updatedProjectComments });
+      }
+    } else if (comment.resourceId) {
+      const resource = this.getResourceById(comment.resourceId);
+      if (resource && resource.comments) {
+        const updatedResourceComments = resource.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateResource(comment.resourceId, { comments: updatedResourceComments });
+      }
+    }
+    
+    this.logDatabaseChange('create', 'reply', newReply.id, `Reply added to comment: ${commentId}`);
+    return newReply;
+  }
+  
+  deleteReply(commentId: string, replyId: string): boolean {
+    const commentIndex = this.comments.findIndex(c => c.id === commentId);
+    if (commentIndex === -1) return false;
+    
+    const comment = this.comments[commentIndex];
+    if (!comment.replies) return false;
+    
+    const replyIndex = comment.replies.findIndex(r => r.id === replyId);
+    if (replyIndex === -1) return false;
+    
+    const updatedReplies = [
+      ...comment.replies.slice(0, replyIndex),
+      ...comment.replies.slice(replyIndex + 1)
+    ];
+    
+    const updatedComment = {
+      ...comment,
+      replies: updatedReplies
+    };
+    
+    this.comments = [
+      ...this.comments.slice(0, commentIndex),
+      updatedComment,
+      ...this.comments.slice(commentIndex + 1)
+    ];
+    
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
+    
+    // Also update the project/resource
+    if (comment.projectId) {
+      const project = this.getProjectById(comment.projectId);
+      if (project && project.comments) {
+        const updatedProjectComments = project.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateProject(comment.projectId, { comments: updatedProjectComments });
+      }
+    } else if (comment.resourceId) {
+      const resource = this.getResourceById(comment.resourceId);
+      if (resource && resource.comments) {
+        const updatedResourceComments = resource.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateResource(comment.resourceId, { comments: updatedResourceComments });
+      }
+    }
+    
+    this.logDatabaseChange('delete', 'reply', replyId, `Reply deleted from comment: ${commentId}`);
+    return true;
+  }
+  
+  likeReply(commentId: string, replyId: string, userId: string): boolean {
+    const commentIndex = this.comments.findIndex(c => c.id === commentId);
+    if (commentIndex === -1) return false;
+    
+    const comment = this.comments[commentIndex];
+    if (!comment.replies) return false;
+    
+    const replyIndex = comment.replies.findIndex(r => r.id === replyId);
+    if (replyIndex === -1) return false;
+    
+    const reply = comment.replies[replyIndex];
+    
+    // Check if user already liked the reply
+    if (reply.likedBy?.includes(userId)) {
+      return false;
+    }
+    
+    const updatedReply = {
+      ...reply,
+      likes: (reply.likes || 0) + 1,
+      likedBy: [...(reply.likedBy || []), userId]
+    };
+    
+    const updatedReplies = [
+      ...comment.replies.slice(0, replyIndex),
+      updatedReply,
+      ...comment.replies.slice(replyIndex + 1)
+    ];
+    
+    const updatedComment = {
+      ...comment,
+      replies: updatedReplies
+    };
+    
+    this.comments = [
+      ...this.comments.slice(0, commentIndex),
+      updatedComment,
+      ...this.comments.slice(commentIndex + 1)
+    ];
+    
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
+    
+    // Also update the project/resource
+    if (comment.projectId) {
+      const project = this.getProjectById(comment.projectId);
+      if (project && project.comments) {
+        const updatedProjectComments = project.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateProject(comment.projectId, { comments: updatedProjectComments });
+      }
+    } else if (comment.resourceId) {
+      const resource = this.getResourceById(comment.resourceId);
+      if (resource && resource.comments) {
+        const updatedResourceComments = resource.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateResource(comment.resourceId, { comments: updatedResourceComments });
+      }
+    }
+    
+    this.logDatabaseChange('update', 'reply', replyId, `Reply liked in comment: ${commentId}`);
+    return true;
+  }
+  
+  // Comment Attachments
+  addCommentAttachment(commentId: string, attachment: Omit<Attachment, 'id'>): Attachment | null {
+    const commentIndex = this.comments.findIndex(c => c.id === commentId);
+    if (commentIndex === -1) return null;
+    
+    const comment = this.comments[commentIndex];
+    
+    // Extract file type
+    let fileType = undefined;
+    if (attachment.url && attachment.url.startsWith('data:')) {
+      const match = attachment.url.match(/data:[^/]+\/([^;]+);/);
+      fileType = match ? `.${match[1]}` : undefined;
+    }
+    
+    const newAttachment = {
+      ...attachment,
+      id: Date.now().toString(),
+      fileType
+    };
+    
+    const updatedComment = {
+      ...comment,
+      attachments: [...(comment.attachments || []), newAttachment]
+    };
+    
+    this.comments = [
+      ...this.comments.slice(0, commentIndex),
+      updatedComment,
+      ...this.comments.slice(commentIndex + 1)
+    ];
+    
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(this.comments));
+    
+    // Also update the project/resource
+    if (comment.projectId) {
+      const project = this.getProjectById(comment.projectId);
+      if (project && project.comments) {
+        const updatedProjectComments = project.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateProject(comment.projectId, { comments: updatedProjectComments });
+      }
+    } else if (comment.resourceId) {
+      const resource = this.getResourceById(comment.resourceId);
+      if (resource && resource.comments) {
+        const updatedResourceComments = resource.comments.map(c => 
+          c.id === commentId ? updatedComment : c
+        );
+        this.updateResource(comment.resourceId, { comments: updatedResourceComments });
+      }
+    }
+    
+    return newAttachment;
   }
 
   // About Content Methods
@@ -726,17 +1029,50 @@ class DataService {
   }
   
   addUserDetails(details: Omit<UserDetails, 'id'>): UserDetails {
-    const newUserDetails = {
-      ...details,
-      id: Date.now().toString(),
-      activity: []
-    };
-    
-    this.userDetails = [...this.userDetails, newUserDetails];
-    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
-    
-    this.logDatabaseChange('create', 'user', newUserDetails.id, `Created user: ${newUserDetails.name}`);
-    return newUserDetails;
+    try {
+      const newUserDetails = {
+        ...details,
+        id: Date.now().toString(),
+        activity: []
+      };
+      
+      this.userDetails = [...this.userDetails, newUserDetails];
+      
+      // Compress the user details before storing to reduce localStorage size
+      const compressedDetails = this.userDetails.map(user => {
+        // If profile picture is large, only store type
+        if (user.profilePicture && user.profilePicture.length > 1000) {
+          return {
+            ...user,
+            profilePictureType: user.profilePictureType || 'image',
+            profilePicture: user.id === newUserDetails.id ? user.profilePicture : undefined
+          };
+        }
+        return user;
+      });
+      
+      localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(compressedDetails));
+      
+      this.logDatabaseChange('create', 'user', newUserDetails.id, `Created user: ${newUserDetails.name}`);
+      return newUserDetails;
+    } catch (error) {
+      console.error("Error adding user details:", error);
+      
+      // Attempt to save a minimized version without the profile picture
+      const minimalDetails = {
+        ...details,
+        id: Date.now().toString(),
+        activity: [],
+        profilePictureType: details.profilePicture ? 'image-too-large' : undefined,
+        profilePicture: undefined
+      };
+      
+      this.userDetails = [...this.userDetails, minimalDetails];
+      localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+      
+      this.logDatabaseChange('create', 'user', minimalDetails.id, `Created user (minimal): ${minimalDetails.name}`);
+      return minimalDetails;
+    }
   }
   
   getUserDetailsById(id: string): UserDetails | undefined {
