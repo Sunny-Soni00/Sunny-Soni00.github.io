@@ -5,7 +5,7 @@ interface GlowingButtonProps {
   children: React.ReactNode;
   color?: 'cyan' | 'pink' | 'purple';
   className?: string;
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   type?: 'button' | 'submit' | 'reset';
 }
 

@@ -8,7 +8,7 @@ import {
   Send, Download, Eye, FileText, File, Image as ImageIcon,
   Film, Music
 } from 'lucide-react';
-import { DataService, dataService } from '../services/DataService';
+import { dataService } from '../services/DataService';
 import { Project, Comment, Attachment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -280,7 +280,7 @@ const ProjectDetails = () => {
                     rows={2}
                   />
                   <GlowingButton
-                    onClick={(e: any) => handleAddComment(e)}
+                    onClick={handleAddComment}
                     className="self-end"
                     color="cyan"
                   >
