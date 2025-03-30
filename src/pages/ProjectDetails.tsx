@@ -1,40 +1,78 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
 import { 
-  ArrowLeft, ExternalLink, FileText, Github, Eye, Download, MessageSquare, Send, Image as ImageIcon, File, Film, Music, Code
+  ArrowLeft, Github, ExternalLink, Calendar, MessageSquare, 
+  Send, Download, Eye, FileText, File, Image as ImageIcon
 } from 'lucide-react';
 import { dataService } from '../services/DataService';
-import { Project, Comment, Attachment } from '../models/DataModels';
+import { Project, Comment } from '../models/DataModels';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, userDetails } = useAuth();
-  
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [showImagePreview, setShowImagePreview] = useState<string | null>(null);
   
+  const { user, userRole } = useAuth();
+  
   useEffect(() => {
     if (id) {
-      const foundProject = dataService.getProjectById(id);
-      if (foundProject) {
-        setProject(foundProject);
+      const projectData = dataService.getProjectById(id);
+      if (projectData) {
+        setProject(projectData);
       } else {
         toast.error('Project not found');
         navigate('/projects');
       }
+      setLoading(false);
     }
-    setLoading(false);
   }, [id, navigate]);
   
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast.error('Please login to add a comment');
+      return;
+    }
+    
+    if (!comment.trim()) {
+      toast.error('Comment cannot be empty');
+      return;
+    }
+    
+    if (project && id) {
+      const newComment: Partial<Comment> = {
+        userId: user.id,
+        userName: user.name || 'Anonymous',
+        userImage: user.profilePicture,
+        message: comment.trim()
+      };
+      
+      const success = dataService.addProjectComment(id, newComment);
+      
+      if (success) {
+        toast.success('Comment added successfully');
+        setComment('');
+        
+        // Refresh project data
+        const updatedProject = dataService.getProjectById(id);
+        if (updatedProject) {
+          setProject(updatedProject);
+        }
+      } else {
+        toast.error('Failed to add comment');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -58,33 +96,6 @@ const ProjectDetails = () => {
     );
   }
 
-  const handleAddComment = () => {
-    if (!isAuthenticated || !userDetails) {
-      toast.error('Please log in to add a comment');
-      return;
-    }
-    
-    if (!comment.trim()) {
-      toast.error('Comment cannot be empty');
-      return;
-    }
-    
-    const newComment: Omit<Comment, 'id'> = {
-      userId: userDetails.id,
-      userName: userDetails.name,
-      userImage: userDetails.profilePicture,
-      message: comment,
-      date: new Date().toISOString()
-    };
-    
-    const updatedProject = dataService.addProjectComment(project.id, newComment);
-    if (updatedProject) {
-      setProject(updatedProject);
-      setComment('');
-      toast.success('Comment added successfully');
-    }
-  };
-  
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) return <ImageIcon className="w-4 h-4" />;
     if (type.startsWith('video/')) return <Film className="w-4 h-4" />;
@@ -112,7 +123,6 @@ const ProjectDetails = () => {
           Back to Projects
         </button>
         
-        {/* Main project image */}
         <div className="mb-8 rounded-lg overflow-hidden relative group h-72 bg-black/20 border border-white/10">
           <div className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity">
             <Eye className="w-12 h-12 text-neon-blue" />
@@ -253,14 +263,13 @@ const ProjectDetails = () => {
               )}
             </div>
             
-            {/* Comments Section */}
             <div className="border-t border-white/10 pt-4">
               <h2 className="font-semibold mb-4 flex items-center">
                 <MessageSquare className="w-5 h-5 mr-2 text-neon-blue" />
                 Comments
               </h2>
               
-              {isAuthenticated ? (
+              {user ? (
                 <div className="flex space-x-3 mb-6">
                   <textarea 
                     value={comment}
@@ -283,7 +292,6 @@ const ProjectDetails = () => {
                 </div>
               )}
               
-              {/* Comments List */}
               <div className="space-y-4">
                 {project.comments && project.comments.length > 0 ? (
                   project.comments.map((comment) => (
@@ -329,7 +337,6 @@ const ProjectDetails = () => {
         </GlassCard>
       </div>
       
-      {/* Image Preview Modal */}
       {showImagePreview && (
         <div 
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"

@@ -6,7 +6,7 @@ import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
 import { 
   Search, Book, Link as LinkIcon, Star, FileText, 
-  Code, Database, Layers, Trash2, Edit, Plus, Upload, X, Image, File, Film, Music, MessageSquare, Eye
+  Code, Database, Layers, Trash2, Edit, Plus, Upload, X, Image, File, Film, Music, MessageSquare, Eye, Download
 } from 'lucide-react';
 import { dataService } from '../services/DataService';
 import { Resource, Attachment } from '../models/DataModels';
