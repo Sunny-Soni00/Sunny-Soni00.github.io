@@ -14,8 +14,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import UserLogin from './components/UserLogin';
 import AdminLogin from './components/AdminLogin';
-import ResourceDetails from './pages/ResourceDetails';
-import ProjectDetails from './pages/ProjectDetails';
 
 import './App.css';
 
@@ -30,9 +28,7 @@ const AppRoutes = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/:id" element={<ProjectDetails />} />
         <Route path="/resources" element={<Resources />} />
-        <Route path="/resources/:id" element={<ResourceDetails />} />
         <Route path="/reviews" element={<Reviews />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<NotFound />} />
@@ -53,7 +49,7 @@ function App() {
       <AuthProvider>
         <Router>
           <AppRoutes />
-          <Toaster position="top-right" richColors duration={2000} />
+          <Toaster position="top-right" richColors />
         </Router>
       </AuthProvider>
     </QueryClientProvider>

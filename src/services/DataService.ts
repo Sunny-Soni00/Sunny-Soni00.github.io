@@ -1,508 +1,640 @@
 
-import { Project, Resource, Review, UserDetails, DatabaseChange, AboutContent, AdminCredentials, Attachment, Comment } from '../models/DataModels';
+import { Project, Resource, Review, AboutContent, Attachment, UserDetails } from '../models/DataModels';
 
-export class DataService {
-  private static instance: DataService;
+// Initial Projects Data
+const initialProjects: Project[] = [
+  {
+    id: '1',
+    title: 'Neural Style Transfer App',
+    description: 'An application that uses AI to apply artistic styles to images.',
+    image: '/lovable-uploads/2e6eb633-039f-4b1f-9f20-9b910802c066.png',
+    category: 'AI',
+    techStack: ['Python', 'TensorFlow', 'React', 'Flask'],
+    demoLink: '#',
+    repoLink: '#'
+  },
+  {
+    id: '2',
+    title: 'Cosmic Dashboard',
+    description: 'A responsive analytics dashboard with interactive data visualizations.',
+    image: '/lovable-uploads/2e6eb633-039f-4b1f-9f20-9b910802c066.png',
+    category: 'Web Dev',
+    techStack: ['React', 'D3.js', 'Node.js', 'Express'],
+    demoLink: '#',
+    repoLink: '#'
+  },
+  {
+    id: '3',
+    title: 'Sentiment Analysis Tool',
+    description: 'A tool that analyzes sentiment in text using natural language processing.',
+    image: '/lovable-uploads/2e6eb633-039f-4b1f-9f20-9b910802c066.png',
+    category: 'Data Science',
+    techStack: ['Python', 'NLTK', 'scikit-learn', 'Flask'],
+    demoLink: '#',
+    repoLink: '#'
+  },
+  {
+    id: '4',
+    title: 'Nebula UI Kit',
+    description: 'A cosmic-themed UI component library for modern web applications.',
+    image: '/lovable-uploads/2e6eb633-039f-4b1f-9f20-9b910802c066.png',
+    category: 'UI/UX',
+    techStack: ['React', 'TypeScript', 'Styled Components'],
+    demoLink: '#',
+    repoLink: '#'
+  },
+  {
+    id: '5',
+    title: 'Predictive Text Generator',
+    description: 'An AI model that generates text based on learning patterns from input data.',
+    image: '/lovable-uploads/2e6eb633-039f-4b1f-9f20-9b910802c066.png',
+    category: 'AI',
+    techStack: ['Python', 'PyTorch', 'Transformers', 'FastAPI'],
+    demoLink: '#',
+    repoLink: '#'
+  },
+  {
+    id: '6',
+    title: 'Data Visualization Explorer',
+    description: 'Interactive platform for exploring and creating complex data visualizations.',
+    image: '/lovable-uploads/2e6eb633-039f-4b1f-9f20-9b910802c066.png',
+    category: 'Data Science',
+    techStack: ['JavaScript', 'D3.js', 'Vue.js', 'Express'],
+    demoLink: '#',
+    repoLink: '#'
+  }
+];
+
+// Initial Resources Data
+const initialResources: Resource[] = [
+  {
+    id: '1',
+    title: 'Machine Learning Fundamentals',
+    description: 'A comprehensive guide to machine learning concepts and applications.',
+    type: 'PDF',
+    category: 'AI & ML',
+    link: '#'
+  },
+  {
+    id: '2',
+    title: 'Web Development Roadmap 2023',
+    description: 'The complete path to becoming a full-stack web developer.',
+    type: 'Article',
+    category: 'Web Development',
+    link: '#'
+  },
+  {
+    id: '3',
+    title: 'UI Design Principles',
+    description: 'Essential principles for creating intuitive and beautiful user interfaces.',
+    type: 'PDF',
+    category: 'UI/UX Design',
+    link: '#'
+  },
+  {
+    id: '4',
+    title: 'The Future of AI',
+    description: 'A research paper exploring the potential future developments in artificial intelligence.',
+    type: 'PDF',
+    category: 'AI & ML',
+    link: '#'
+  },
+  {
+    id: '5',
+    title: 'React Performance Optimization',
+    description: 'Techniques to improve performance in React applications.',
+    type: 'Article',
+    category: 'Web Development',
+    link: '#'
+  },
+  {
+    id: '6',
+    title: 'Design Systems Guide',
+    description: 'How to create and implement effective design systems.',
+    type: 'PDF',
+    category: 'UI/UX Design',
+    link: '#'
+  },
+  {
+    id: '7',
+    title: 'Data Science Handbook',
+    description: 'A comprehensive reference for data science methods and tools.',
+    type: 'Book',
+    category: 'AI & ML',
+    link: '#'
+  },
+  {
+    id: '8',
+    title: 'JavaScript: The Good Parts',
+    description: 'A classic book on JavaScript best practices.',
+    type: 'Book',
+    category: 'Web Development',
+    link: '#'
+  }
+];
+
+// Initial Reviews Data
+const initialReviews: Review[] = [
+  {
+    id: '1',
+    name: 'Alex Chen',
+    role: 'UX Designer',
+    message: 'The cosmic interface is truly revolutionary. The attention to detail in the UI elements creates an immersive experience that feels both futuristic and intuitive.',
+    rating: 5,
+    date: '2 weeks ago'
+  },
+  {
+    id: '2',
+    name: 'Sarah Johnson',
+    role: 'Web Developer',
+    message: 'I\'ve been looking for resources on AI integration, and this site delivered beyond expectation. The project showcase is particularly inspiring!',
+    rating: 4,
+    date: '1 month ago'
+  },
+  {
+    id: '3',
+    name: 'Michael Rodriguez',
+    role: 'Data Scientist',
+    message: 'As someone in the field of data visualization, I appreciate the creative approach to displaying complex information. The cosmic theme complements the technical content perfectly.',
+    rating: 5,
+    date: '3 months ago'
+  }
+];
+
+// Initial About Content
+const initialAboutContent: AboutContent = {
+  bio: `Welcome to my cosmic corner of the digital universe! I'm a passionate explorer of emerging technologies, 
+  constantly navigating through the vast expanse of innovation and creativity.
   
-  private constructor() {}
-
-  public static getInstance(): DataService {
-    if (!DataService.instance) {
-      DataService.instance = new DataService();
+  My journey spans across various technological domains - from artificial intelligence and machine learning 
+  to web development and creative design. I believe in the transformative power of technology when aligned 
+  with human-centered approaches.
+  
+  Through this digital dreamscape, I aim to share my learnings, projects, and resources that might help 
+  fellow cosmic travelers on their own journeys. Each project represents a star in my personal galaxy of 
+  experiences, and each resource is a planet of knowledge waiting to be explored.`,
+  socialLinks: {
+    linkedin: 'https://www.linkedin.com/in/sunny-soni1089',
+    github: '#',
+    twitter: '#',
+    email: 'mailto:example@example.com'
+  },
+  experience: [
+    {
+      title: 'Digital Innovation Lead',
+      company: 'TechNova Solutions',
+      period: '2020 - Present',
+      description: 'Leading digital transformation initiatives and exploring emerging tech frontiers.'
+    },
+    {
+      title: 'AI Research Contributor',
+      company: 'FutureLab Institute',
+      period: '2018 - 2020',
+      description: 'Researched applications of machine learning in creative industries.'
     }
-    return DataService.instance;
+  ],
+  skills: [
+    { name: 'AI & Machine Learning', level: 85 },
+    { name: 'Web Development', level: 90 },
+    { name: 'Data Science', level: 75 },
+    { name: 'UI/UX Design', level: 80 },
+    { name: 'Cloud Computing', level: 70 },
+  ]
+};
+
+// Local Storage Keys
+const PROJECTS_STORAGE_KEY = 'cosmicApp_projects';
+const RESOURCES_STORAGE_KEY = 'cosmicApp_resources';
+const REVIEWS_STORAGE_KEY = 'cosmicApp_reviews';
+const ABOUT_STORAGE_KEY = 'cosmicApp_about';
+const USER_DETAILS_STORAGE_KEY = 'cosmicApp_userDetails';
+const DATABASE_LOGS_STORAGE_KEY = 'cosmicApp_databaseLogs';
+
+// Database Log Entry
+interface DatabaseLogEntry {
+  id: string;
+  timestamp: string;
+  action: 'create' | 'update' | 'delete';
+  entity: 'project' | 'resource' | 'review' | 'user' | 'about';
+  entityId: string;
+  details: string;
+}
+
+// Helper to initialize data from localStorage or defaults
+const initializeData = <T>(storageKey: string, initialData: T): T => {
+  const storedData = localStorage.getItem(storageKey);
+  if (storedData) {
+    try {
+      return JSON.parse(storedData);
+    } catch (e) {
+      console.error(`Error parsing stored data for ${storageKey}:`, e);
+      return initialData;
+    }
+  }
+  localStorage.setItem(storageKey, JSON.stringify(initialData));
+  return initialData;
+};
+
+// Data Service Class
+class DataService {
+  private projects: Project[];
+  private resources: Resource[];
+  private reviews: Review[];
+  private aboutContent: AboutContent;
+  private userDetails: UserDetails[];
+  private databaseLogs: DatabaseLogEntry[];
+
+  constructor() {
+    this.projects = initializeData<Project[]>(PROJECTS_STORAGE_KEY, initialProjects);
+    this.resources = initializeData<Resource[]>(RESOURCES_STORAGE_KEY, initialResources);
+    this.reviews = initializeData<Review[]>(REVIEWS_STORAGE_KEY, initialReviews);
+    this.aboutContent = initializeData<AboutContent>(ABOUT_STORAGE_KEY, initialAboutContent);
+    this.userDetails = initializeData<UserDetails[]>(USER_DETAILS_STORAGE_KEY, []);
+    this.databaseLogs = initializeData<DatabaseLogEntry[]>(DATABASE_LOGS_STORAGE_KEY, []);
+    
+    // Update older projects that might not have attachments array
+    this.projects = this.projects.map(project => {
+      if (!project.attachments) {
+        return {
+          ...project,
+          attachments: []
+        };
+      }
+      return project;
+    });
+    
+    // Update older resources that might not have attachments array
+    this.resources = this.resources.map(resource => {
+      if (!resource.attachments) {
+        return {
+          ...resource,
+          attachments: []
+        };
+      }
+      return resource;
+    });
+    
+    // Save updated projects and resources
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
   }
 
-  // Helper function to simulate delay
-  private delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+  // Log database changes
+  private logDatabaseChange(action: 'create' | 'update' | 'delete', entity: 'project' | 'resource' | 'review' | 'user' | 'about', entityId: string, details: string) {
+    const logEntry: DatabaseLogEntry = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      action,
+      entity,
+      entityId,
+      details
+    };
+    
+    this.databaseLogs = [...this.databaseLogs, logEntry];
+    localStorage.setItem(DATABASE_LOGS_STORAGE_KEY, JSON.stringify(this.databaseLogs));
+    return logEntry;
+  }
+  
+  // Get all database logs
+  getDatabaseLogs(): DatabaseLogEntry[] {
+    return [...this.databaseLogs];
+  }
+  
+  // Export database as JSON
+  exportDatabase(): string {
+    const database = {
+      projects: this.projects,
+      resources: this.resources,
+      reviews: this.reviews,
+      aboutContent: this.aboutContent,
+      userDetails: this.userDetails,
+      databaseLogs: this.databaseLogs
+    };
+    
+    return JSON.stringify(database, null, 2);
+  }
 
-  // Initial Data (can be extended)
-  private initialProjects: Project[] = [
-    {
-      id: '1',
-      title: 'AI-Powered Chatbot',
-      description: 'A chatbot that uses natural language processing to understand and respond to user queries.',
-      image: 'https://images.unsplash.com/photo-1583508915404-24c82458e384?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-      category: 'AI',
-      techStack: ['React', 'Node.js', 'TensorFlow'],
-      demoLink: 'https://example.com/chatbot',
-      repoLink: 'https://github.com/example/chatbot',
-      attachments: []
-    },
-    {
-      id: '2',
-      title: 'E-commerce Platform',
-      description: 'An e-commerce platform built with React and Node.js.',
-      image: 'https://images.unsplash.com/photo-1517331156700-3c241e89114d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80',
-      category: 'Web Dev',
-      techStack: ['React', 'Node.js', 'MongoDB'],
-      demoLink: 'https://example.com/ecommerce',
-      repoLink: 'https://github.com/example/ecommerce',
-      attachments: []
-    },
-    {
-      id: '3',
-      title: 'Data Visualization Dashboard',
-      description: 'A dashboard that visualizes data from various sources.',
-      image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-      category: 'Data Science',
-      techStack: ['React', 'Python', 'Flask'],
-      demoLink: 'https://example.com/dashboard',
-      repoLink: 'https://github.com/example/dashboard',
-      attachments: []
-    },
-    {
-      id: '4',
-      title: 'Mobile App UI Design',
-      description: 'A mobile app UI design for a social media platform.',
-      image: 'https://images.unsplash.com/photo-1555057324-b44a752a7ca5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-      category: 'UI/UX',
-      techStack: ['Figma', 'Adobe XD'],
-      demoLink: 'https://example.com/mobile-app',
-      repoLink: 'https://github.com/example/mobile-app',
-      attachments: []
-    },
-  ];
-  private initialResources: Resource[] = [
-    {
-      id: '1',
-      title: 'AI Best Practices',
-      description: 'A guide to AI best practices.',
-      type: 'Article',
-      category: 'AI & ML',
-      link: 'https://example.com/ai-best-practices',
-      attachments: []
-    },
-    {
-      id: '2',
-      title: 'React Documentation',
-      description: 'The official React documentation.',
-      type: 'Article',
-      category: 'Web Development',
-      link: 'https://reactjs.org/docs/getting-started.html',
-      attachments: []
-    },
-    {
-      id: '3',
-      title: 'UI/UX Design Principles',
-      description: 'A guide to UI/UX design principles.',
-      type: 'Article',
-      category: 'UI/UX Design',
-      link: 'https://example.com/ui-ux-design-principles',
-      attachments: []
-    },
-    {
-      id: '4',
-      title: 'The Elements of Statistical Learning',
-      description: 'A book on statistical learning.',
-      type: 'Book',
-      category: 'Books & PDFs',
-      link: 'https://web.stanford.edu/~hastie/ElemStatLearn/',
-      attachments: []
-    },
-  ];
-  private initialReviews: Review[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      role: 'Software Engineer',
-      message: 'Great website!',
-      rating: 5,
-      date: new Date().toISOString(),
-      image: 'https://images.unsplash.com/photo-1500648767791-00d5a4ee9baa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-      attachments: []
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      role: 'Data Scientist',
-      message: 'I learned a lot from this website.',
-      rating: 4,
-      date: new Date().toISOString(),
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-      attachments: []
-    },
-  ];
-  private initialUserDetails: UserDetails[] = [
-    {
-      id: '1',
-      name: 'Test User',
-      email: 'test@example.com',
-      visitDate: new Date().toISOString(),
-      age: 30,
-      gender: 'Male',
-      profilePicture: 'https://images.unsplash.com/photo-1500648767791-00d5a4ee9baa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-      bio: 'A test user',
-      phone: '123-456-7890',
-      occupation: 'Software Engineer',
-      interests: ['AI', 'Web Development']
-    }
-  ];
-  private initialAboutContent: AboutContent = {
-    bio: 'I am a full-stack developer with a passion for AI and digital transformation.',
-    profileImage: 'https://images.unsplash.com/photo-1500648767791-00d5a4ee9baa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    socialLinks: {
-      linkedin: 'https://www.linkedin.com/in/johndoe',
-      github: 'https://github.com/johndoe',
-      twitter: 'https://twitter.com/johndoe',
-      email: 'john.doe@example.com'
-    },
-    experience: [
-      {
-        title: 'Software Engineer',
-        company: 'Example Corp',
-        period: '2020 - Present',
-        description: 'Developed and maintained various web applications.'
-      },
-      {
-        title: 'Data Scientist',
-        company: 'Another Example Corp',
-        period: '2018 - 2020',
-        description: 'Developed and maintained various data science projects.'
-      }
-    ],
-    skills: [
-      {
-        name: 'React',
-        level: 5
-      },
-      {
-        name: 'Node.js',
-        level: 4
-      },
-      {
-        name: 'Python',
-        level: 4
-      },
-      {
-        name: 'TensorFlow',
-        level: 3
-      }
-    ]
-  };
-  private initialAdminCredentials: AdminCredentials[] = [
-    {
-      userId: 'admin',
-      password: 'password'
-    }
-  ];
-
-  // Load data from localStorage or initialize with initial data
+  // Projects Methods
   getAllProjects(): Project[] {
-    const projects = localStorage.getItem('projects');
-    return projects ? JSON.parse(projects) : this.initialProjects;
+    return [...this.projects];
   }
 
   getProjectById(id: string): Project | undefined {
-    const projects = this.getAllProjects();
-    return projects.find(project => project.id === id);
+    return this.projects.find(project => project.id === id);
   }
 
   addProject(project: Omit<Project, 'id'>): Project {
-    const projects = this.getAllProjects();
-    const newProject = { ...project, id: Date.now().toString() };
-    projects.push(newProject);
-    localStorage.setItem('projects', JSON.stringify(projects));
-    this.logDatabaseChange('add', 'project', newProject.id);
+    const newProject = {
+      ...project,
+      id: Date.now().toString()
+    };
+    this.projects = [...this.projects, newProject];
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    
+    this.logDatabaseChange('create', 'project', newProject.id, `Created project: ${newProject.title}`);
     return newProject;
   }
 
-  updateProject(id: string, updatedProject: Project): Project | undefined {
-    const projects = this.getAllProjects();
-    const projectIndex = projects.findIndex(project => project.id === id);
-    if (projectIndex !== -1) {
-      projects[projectIndex] = updatedProject;
-      localStorage.setItem('projects', JSON.stringify(projects));
-      this.logDatabaseChange('update', 'project', id);
-      return updatedProject;
-    }
-    return undefined;
+  updateProject(id: string, project: Partial<Project>): Project | undefined {
+    const index = this.projects.findIndex(p => p.id === id);
+    if (index === -1) return undefined;
+
+    const updatedProject = { ...this.projects[index], ...project };
+    this.projects = [
+      ...this.projects.slice(0, index),
+      updatedProject,
+      ...this.projects.slice(index + 1)
+    ];
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    
+    this.logDatabaseChange('update', 'project', id, `Updated project: ${updatedProject.title}`);
+    return updatedProject;
   }
 
   deleteProject(id: string): boolean {
-    const projects = this.getAllProjects();
-    const updatedProjects = projects.filter(project => project.id !== id);
-    if (updatedProjects.length < projects.length) {
-      localStorage.setItem('projects', JSON.stringify(updatedProjects));
-      this.logDatabaseChange('delete', 'project', id);
+    const project = this.getProjectById(id);
+    if (!project) return false;
+    
+    const initialLength = this.projects.length;
+    this.projects = this.projects.filter(p => p.id !== id);
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    
+    if (this.projects.length < initialLength) {
+      this.logDatabaseChange('delete', 'project', id, `Deleted project: ${project.title}`);
       return true;
     }
     return false;
   }
 
-  getAllResources(): Resource[] {
-    const resources = localStorage.getItem('resources');
-    return resources ? JSON.parse(resources) : this.initialResources;
-  }
-
-  getResourceById(id: string): Resource | undefined {
-    const resources = this.getAllResources();
-    return resources.find(resource => resource.id === id);
-  }
-
-  addResource(resource: Omit<Resource, 'id'>): Resource {
-    const resources = this.getAllResources();
-    const newResource = { ...resource, id: Date.now().toString() };
-    resources.push(newResource);
-    localStorage.setItem('resources', JSON.stringify(resources));
-    this.logDatabaseChange('add', 'resource', newResource.id);
-    return newResource;
-  }
-
-  updateResource(id: string, updatedResource: Resource): Resource | undefined {
-    const resources = this.getAllResources();
-    const resourceIndex = resources.findIndex(resource => resource.id === id);
-    if (resourceIndex !== -1) {
-      resources[resourceIndex] = updatedResource;
-      localStorage.setItem('resources', JSON.stringify(resources));
-      this.logDatabaseChange('update', 'resource', id);
-      return updatedResource;
-    }
-    return undefined;
-  }
-
-  deleteResource(id: string): boolean {
-    const resources = this.getAllResources();
-    const updatedResources = resources.filter(resource => resource.id !== id);
-    if (updatedResources.length < resources.length) {
-      localStorage.setItem('resources', JSON.stringify(updatedResources));
-      this.logDatabaseChange('delete', 'resource', id);
-      return true;
-    }
-    return false;
-  }
-
-  getAllReviews(): Review[] {
-    const reviews = localStorage.getItem('reviews');
-    return reviews ? JSON.parse(reviews) : this.initialReviews;
-  }
-
-  addReview(review: Omit<Review, 'id'>): Review {
-    const reviews = this.getAllReviews();
-    const newReview = { ...review, id: Date.now().toString() };
-    reviews.push(newReview);
-    localStorage.setItem('reviews', JSON.stringify(reviews));
-    this.logDatabaseChange('add', 'review', newReview.id);
-    return newReview;
-  }
-
-  updateReview(id: string, updatedReview: Review): Review | undefined {
-    const reviews = this.getAllReviews();
-    const reviewIndex = reviews.findIndex(review => review.id === id);
-    if (reviewIndex !== -1) {
-      reviews[reviewIndex] = updatedReview;
-      localStorage.setItem('reviews', JSON.stringify(reviews));
-      this.logDatabaseChange('update', 'review', id);
-      return updatedReview;
-    }
-    return undefined;
-  }
-
-  deleteReview(id: string): boolean {
-    const reviews = this.getAllReviews();
-    const updatedReviews = reviews.filter(review => review.id !== id);
-    if (updatedReviews.length < reviews.length) {
-      localStorage.setItem('reviews', JSON.stringify(updatedReviews));
-      this.logDatabaseChange('delete', 'review', id);
-      return true;
-    }
-    return false;
-  }
-
-  getAllUserDetails(): UserDetails[] {
-    const userDetails = localStorage.getItem('userDetails');
-    return userDetails ? JSON.parse(userDetails) : this.initialUserDetails;
-  }
-
-  getUserDetailsById(id: string): UserDetails | undefined {
-    const userDetails = this.getAllUserDetails();
-    return userDetails.find(user => user.id === id);
-  }
-
-  addUserDetails(user: Omit<UserDetails, 'id'>): UserDetails {
-    const userDetails = this.getAllUserDetails();
-    const newUser = { ...user, id: Date.now().toString() };
-    userDetails.push(newUser);
-    localStorage.setItem('userDetails', JSON.stringify(userDetails));
-    this.logDatabaseChange('add', 'user', newUser.id);
-    return newUser;
-  }
-
-  updateUserDetails(id: string, updatedFields: Partial<UserDetails>): UserDetails | undefined {
-    const userDetails = this.getAllUserDetails();
-    const userIndex = userDetails.findIndex(user => user.id === id);
-    if (userIndex !== -1) {
-      userDetails[userIndex] = { ...userDetails[userIndex], ...updatedFields };
-      localStorage.setItem('userDetails', JSON.stringify(userDetails));
-      this.logDatabaseChange('update', 'user', id);
-      return userDetails[userIndex];
-    }
-    return undefined;
-  }
-
-  deleteUserDetails(id: string): boolean {
-    const userDetails = this.getAllUserDetails();
-    const updatedUserDetails = userDetails.filter(user => user.id !== id);
-    if (updatedUserDetails.length < userDetails.length) {
-      localStorage.setItem('userDetails', JSON.stringify(updatedUserDetails));
-      this.logDatabaseChange('delete', 'user', id);
-      return true;
-    }
-    return false;
-  }
-
-  getAboutContent(): AboutContent {
-    const aboutContent = localStorage.getItem('aboutContent');
-    return aboutContent ? JSON.parse(aboutContent) : this.initialAboutContent;
-  }
-
-  updateAboutContent(updatedFields: Partial<AboutContent>): AboutContent {
-    const currentContent = this.getAboutContent();
-    const updatedContent = { ...currentContent, ...updatedFields };
-    localStorage.setItem('aboutContent', JSON.stringify(updatedContent));
-    return updatedContent;
-  }
-
-  getAdminCredentials(): AdminCredentials[] {
-    const adminCredentials = localStorage.getItem('adminCredentials');
-    return adminCredentials ? JSON.parse(adminCredentials) : this.initialAdminCredentials;
-  }
-
-  updateAdminCredentials(updatedAdminCredentials: AdminCredentials[]): AdminCredentials[] {
-    localStorage.setItem('adminCredentials', JSON.stringify(updatedAdminCredentials));
-    return updatedAdminCredentials;
-  }
-
-  resetData() {
-    localStorage.removeItem('projects');
-    localStorage.removeItem('resources');
-    localStorage.removeItem('reviews');
-    localStorage.removeItem('userDetails');
-    localStorage.removeItem('databaseChanges');
-    localStorage.setItem('projects', JSON.stringify(this.initialProjects));
-    localStorage.setItem('resources', JSON.stringify(this.initialResources));
-    localStorage.setItem('reviews', JSON.stringify(this.initialReviews));
-    localStorage.setItem('userDetails', JSON.stringify(this.initialUserDetails));
-  }
-
-  private logDatabaseChange(action: DatabaseChange['action'], entityType: DatabaseChange['entityType'], entityId: string) {
-    const changes = this.getAllDatabaseChanges();
-    const newChange: DatabaseChange = {
-      id: Date.now().toString(),
-      action,
-      entityType,
-      entityId,
-      timestamp: new Date().toISOString()
-    };
-    changes.push(newChange);
-    localStorage.setItem('databaseChanges', JSON.stringify(changes));
-  }
-
-  getAllDatabaseChanges() {
-    const changes = localStorage.getItem('databaseChanges');
-    return changes ? JSON.parse(changes) : [];
-  }
-
-  downloadDatabase() {
-    const data = {
-      projects: this.getAllProjects(),
-      resources: this.getAllResources(),
-      reviews: this.getAllReviews(),
-      userDetails: this.getAllUserDetails(),
-      databaseChanges: this.getAllDatabaseChanges()
+  // Projects Attachments Methods
+  addProjectAttachment(projectId: string, attachment: Omit<Attachment, 'id'>): Attachment | null {
+    const project = this.getProjectById(projectId);
+    if (!project) return null;
+    
+    const newAttachment = {
+      ...attachment,
+      id: Date.now().toString()
     };
     
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cosmic_dreamscape_db_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const attachments = project.attachments || [];
+    const updatedProject = {
+      ...project,
+      attachments: [...attachments, newAttachment]
+    };
+    
+    this.updateProject(projectId, updatedProject);
+    return newAttachment;
+  }
+  
+  deleteProjectAttachment(projectId: string, attachmentId: string): boolean {
+    const project = this.getProjectById(projectId);
+    if (!project || !project.attachments) return false;
+    
+    const initialCount = project.attachments.length;
+    const updatedAttachments = project.attachments.filter(a => a.id !== attachmentId);
+    
+    if (initialCount === updatedAttachments.length) return false;
+    
+    this.updateProject(projectId, { attachments: updatedAttachments });
     return true;
   }
 
-  getRecentActivity(limit: number = 5) {
-    const projects = this.getAllProjects().slice(0, limit).map(p => ({
-      id: p.id,
-      type: 'Project',
-      title: p.title,
-      category: p.category
-    }));
-    
-    const resources = this.getAllResources().slice(0, limit).map(r => ({
-      id: r.id,
-      type: 'Resource',
-      title: r.title,
-      category: r.category
-    }));
-    
-    const reviews = this.getAllReviews().slice(0, limit).map(r => ({
-      id: r.id,
-      type: 'Review',
-      title: r.name,
-      category: r.role
-    }));
-    
-    return [...projects, ...resources, ...reviews]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, limit);
+  // Resources Methods
+  getAllResources(): Resource[] {
+    return [...this.resources];
   }
 
-  addProjectComment(projectId: string, newComment: Partial<Comment>): boolean {
-    const projects = this.getAllProjects();
-    const projectIndex = projects.findIndex(p => p.id === projectId);
+  getResourceById(id: string): Resource | undefined {
+    return this.resources.find(resource => resource.id === id);
+  }
+
+  addResource(resource: Omit<Resource, 'id'>): Resource {
+    const newResource = {
+      ...resource,
+      id: Date.now().toString(),
+      attachments: resource.attachments || []
+    };
+    this.resources = [...this.resources, newResource];
+    localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
     
-    if (projectIndex !== -1) {
-      if (!projects[projectIndex].comments) {
-        projects[projectIndex].comments = [];
-      }
-      
-      const comment: Comment = {
-        id: Date.now().toString(),
-        userId: newComment.userId || 'anonymous',
-        userName: newComment.userName || 'Anonymous',
-        message: newComment.message || '',
-        date: new Date().toISOString(),
-        userImage: newComment.userImage
-      };
-      
-      projects[projectIndex].comments?.push(comment);
-      
-      localStorage.setItem('projects', JSON.stringify(projects));
+    this.logDatabaseChange('create', 'resource', newResource.id, `Created resource: ${newResource.title}`);
+    return newResource;
+  }
+
+  updateResource(id: string, resource: Partial<Resource>): Resource | undefined {
+    const index = this.resources.findIndex(r => r.id === id);
+    if (index === -1) return undefined;
+
+    const updatedResource = { ...this.resources[index], ...resource };
+    this.resources = [
+      ...this.resources.slice(0, index),
+      updatedResource,
+      ...this.resources.slice(index + 1)
+    ];
+    localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
+    
+    this.logDatabaseChange('update', 'resource', id, `Updated resource: ${updatedResource.title}`);
+    return updatedResource;
+  }
+
+  deleteResource(id: string): boolean {
+    const resource = this.getResourceById(id);
+    if (!resource) return false;
+    
+    const initialLength = this.resources.length;
+    this.resources = this.resources.filter(r => r.id !== id);
+    localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
+    
+    if (this.resources.length < initialLength) {
+      this.logDatabaseChange('delete', 'resource', id, `Deleted resource: ${resource.title}`);
       return true;
     }
+    return false;
+  }
+  
+  // Resource Attachments Methods
+  addResourceAttachment(resourceId: string, attachment: Omit<Attachment, 'id'>): Attachment | null {
+    const resource = this.getResourceById(resourceId);
+    if (!resource) return null;
     
+    const newAttachment = {
+      ...attachment,
+      id: Date.now().toString()
+    };
+    
+    const attachments = resource.attachments || [];
+    const updatedResource = {
+      ...resource,
+      attachments: [...attachments, newAttachment]
+    };
+    
+    this.updateResource(resourceId, updatedResource);
+    return newAttachment;
+  }
+  
+  deleteResourceAttachment(resourceId: string, attachmentId: string): boolean {
+    const resource = this.getResourceById(resourceId);
+    if (!resource || !resource.attachments) return false;
+    
+    const initialCount = resource.attachments.length;
+    const updatedAttachments = resource.attachments.filter(a => a.id !== attachmentId);
+    
+    if (initialCount === updatedAttachments.length) return false;
+    
+    this.updateResource(resourceId, { attachments: updatedAttachments });
+    return true;
+  }
+
+  // Reviews Methods
+  getAllReviews(): Review[] {
+    return [...this.reviews];
+  }
+
+  addReview(review: Omit<Review, 'id' | 'date'>): Review {
+    const now = new Date();
+    const newReview = {
+      ...review,
+      id: Date.now().toString(),
+      date: 'Just now'
+    };
+    this.reviews = [...this.reviews, newReview];
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    
+    this.logDatabaseChange('create', 'review', newReview.id, `Created review by: ${newReview.name}`);
+    return newReview;
+  }
+  
+  updateReview(id: string, review: Partial<Review>): Review | undefined {
+    const index = this.reviews.findIndex(r => r.id === id);
+    if (index === -1) return undefined;
+
+    const updatedReview = { ...this.reviews[index], ...review };
+    this.reviews = [
+      ...this.reviews.slice(0, index),
+      updatedReview,
+      ...this.reviews.slice(index + 1)
+    ];
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    
+    this.logDatabaseChange('update', 'review', id, `Updated review by: ${updatedReview.name}`);
+    return updatedReview;
+  }
+
+  deleteReview(id: string): boolean {
+    const review = this.reviews.find(r => r.id === id);
+    if (!review) return false;
+    
+    const initialLength = this.reviews.length;
+    this.reviews = this.reviews.filter(r => r.id !== id);
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    
+    if (this.reviews.length < initialLength) {
+      this.logDatabaseChange('delete', 'review', id, `Deleted review by: ${review.name}`);
+      return true;
+    }
     return false;
   }
 
-  addResourceComment(resourceId: string, newComment: Partial<Comment>): boolean {
-    const resources = this.getAllResources();
-    const resourceIndex = resources.findIndex(r => r.id === resourceId);
+  // About Content Methods
+  getAboutContent(): AboutContent {
+    return { ...this.aboutContent };
+  }
+
+  updateAboutContent(content: Partial<AboutContent>): AboutContent {
+    this.aboutContent = { ...this.aboutContent, ...content };
+    localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(this.aboutContent));
     
-    if (resourceIndex !== -1) {
-      if (!resources[resourceIndex].comments) {
-        resources[resourceIndex].comments = [];
-      }
-      
-      const comment: Comment = {
-        id: Date.now().toString(),
-        userId: newComment.userId || 'anonymous',
-        userName: newComment.userName || 'Anonymous',
-        message: newComment.message || '',
-        date: new Date().toISOString(),
-        userImage: newComment.userImage
-      };
-      
-      resources[resourceIndex].comments?.push(comment);
-      
-      localStorage.setItem('resources', JSON.stringify(resources));
+    this.logDatabaseChange('update', 'about', '1', 'Updated about content');
+    return this.aboutContent;
+  }
+  
+  // User Details Methods
+  getAllUserDetails(): UserDetails[] {
+    return [...this.userDetails];
+  }
+  
+  addUserDetails(details: Omit<UserDetails, 'id'>): UserDetails {
+    const newUserDetails = {
+      ...details,
+      id: Date.now().toString(),
+    };
+    
+    this.userDetails = [...this.userDetails, newUserDetails];
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    
+    this.logDatabaseChange('create', 'user', newUserDetails.id, `Created user: ${newUserDetails.name}`);
+    return newUserDetails;
+  }
+  
+  getUserDetailsById(id: string): UserDetails | undefined {
+    return this.userDetails.find(user => user.id === id);
+  }
+  
+  updateUserDetails(id: string, details: Partial<UserDetails>): UserDetails | undefined {
+    const index = this.userDetails.findIndex(u => u.id === id);
+    if (index === -1) return undefined;
+  
+    const updatedUserDetails = { ...this.userDetails[index], ...details };
+    this.userDetails = [
+      ...this.userDetails.slice(0, index),
+      updatedUserDetails,
+      ...this.userDetails.slice(index + 1)
+    ];
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    
+    this.logDatabaseChange('update', 'user', id, `Updated user: ${updatedUserDetails.name}`);
+    return updatedUserDetails;
+  }
+  
+  deleteUserDetails(id: string): boolean {
+    const user = this.getUserDetailsById(id);
+    if (!user) return false;
+    
+    const initialLength = this.userDetails.length;
+    this.userDetails = this.userDetails.filter(u => u.id !== id);
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    
+    if (this.userDetails.length < initialLength) {
+      this.logDatabaseChange('delete', 'user', id, `Deleted user: ${user.name}`);
       return true;
     }
-    
     return false;
+  }
+
+  // Reset data to initial values (for testing)
+  resetData(): void {
+    this.projects = [...initialProjects];
+    this.resources = [...initialResources];
+    this.reviews = [...initialReviews];
+    this.aboutContent = { ...initialAboutContent };
+    this.userDetails = [];
+    this.databaseLogs = [];
+    
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(this.reviews));
+    localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(this.aboutContent));
+    localStorage.setItem(USER_DETAILS_STORAGE_KEY, JSON.stringify(this.userDetails));
+    localStorage.setItem(DATABASE_LOGS_STORAGE_KEY, JSON.stringify(this.databaseLogs));
+    
+    this.logDatabaseChange('update', 'about', '1', 'Reset all data to defaults');
+  }
+  
+  // Download database as JSON file
+  downloadDatabase(): void {
+    const database = this.exportDatabase();
+    const blob = new Blob([database], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cosmic_galaxy_database.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 }
 
 // Create and export a singleton instance
-export const dataService = DataService.getInstance();
+export const dataService = new DataService();

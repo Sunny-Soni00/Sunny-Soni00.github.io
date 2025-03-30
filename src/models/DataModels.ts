@@ -10,7 +10,6 @@ export interface Project {
   techStack: string[];
   demoLink?: string; // Make demo link optional
   repoLink?: string; // Make repo link optional
-  comments?: Comment[]; // Add comments to projects
 }
 
 // Attachment Model (new)
@@ -30,17 +29,6 @@ export interface Resource {
   category: string;
   link: string;
   attachments?: Attachment[]; // Add attachments to resources
-  comments?: Comment[]; // Add comments to resources
-}
-
-// Comment Model (new)
-export interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  userImage?: string;
-  message: string;
-  date: string;
 }
 
 // Review/Feedback Model
@@ -99,13 +87,4 @@ export interface UserDetails {
   interests?: string[];
 }
 
-// Database Change Log
-export interface DatabaseChange {
-  id: string;
-  action: 'add' | 'update' | 'delete';
-  entityType: 'project' | 'resource' | 'review' | 'user';
-  entityId: string;
-  timestamp: string;
-  userId?: string;
-  details?: string;
-}
+

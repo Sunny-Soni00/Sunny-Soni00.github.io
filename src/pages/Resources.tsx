@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import GlassCard from '../components/GlassCard';
 import GlowingButton from '../components/GlowingButton';
 import { 
-  Search, Book, Link as LinkIcon, Star, FileText, 
-  Code, Database, Layers, Trash2, Edit, Plus, Upload, X, Image, File, Film, Music, MessageSquare, Eye, Download
+  Search, Book, Download, Link as LinkIcon, Star, FileText, 
+  Code, Database, Layers, Trash2, Edit, Plus, Upload, X, Image, File, Film, Music 
 } from 'lucide-react';
 import { dataService } from '../services/DataService';
 import { Resource, Attachment } from '../models/DataModels';
@@ -14,7 +13,6 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 const Resources = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
@@ -23,7 +21,6 @@ const Resources = () => {
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [attachmentPreviews, setAttachmentPreviews] = useState<string[]>([]);
-  const [showImagePreview, setShowImagePreview] = useState<string | null>(null);
   
   const { userRole } = useAuth();
   
@@ -156,23 +153,10 @@ const Resources = () => {
     setIsEditing(true);
   };
 
-  const handleViewResourceDetails = (resourceId: string) => {
-    navigate(`/resources/${resourceId}`);
-  };
-
-  const handlePreviewImage = (imageUrl: string) => {
-    setShowImagePreview(imageUrl);
-  };
-
   const handleSaveResource = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!editingResource) return;
-    
-    if (!editingResource.title.trim()) {
-      toast.error('Title is required');
-      return;
-    }
     
     try {
       // Convert file attachments to attachment objects
@@ -299,23 +283,25 @@ const Resources = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <label className="block text-sm font-medium mb-1">Description *</label>
                   <textarea 
                     value={editingResource.description}
                     onChange={(e) => setEditingResource({...editingResource, description: e.target.value})}
                     className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
                     focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all min-h-[100px]"
+                    required
                   ></textarea>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Type</label>
+                    <label className="block text-sm font-medium mb-1">Type *</label>
                     <select 
                       value={editingResource.type}
                       onChange={(e) => setEditingResource({...editingResource, type: e.target.value})}
                       className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
                       focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
+                      required
                     >
                       <option value="Article">Article</option>
                       <option value="PDF">PDF</option>
@@ -324,12 +310,13 @@ const Resources = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <label className="block text-sm font-medium mb-1">Category *</label>
                     <select 
                       value={editingResource.category}
                       onChange={(e) => setEditingResource({...editingResource, category: e.target.value})}
                       className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
                       focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
+                      required
                     >
                       {categories.map((cat, idx) => (
                         <option key={idx} value={cat.name}>{cat.name}</option>
@@ -339,19 +326,20 @@ const Resources = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Link</label>
+                  <label className="block text-sm font-medium mb-1">Link *</label>
                   <input 
                     type="text" 
                     value={editingResource.link}
                     onChange={(e) => setEditingResource({...editingResource, link: e.target.value})}
                     className="w-full px-4 py-2 bg-black/50 border border-white/20 rounded-md 
                     focus:outline-none focus:border-neon-blue focus:shadow-neon-glow transition-all"
+                    required
                   />
                 </div>
                 
                 {/* Attachments Section */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Attachments</label>
+                  <label className="block text-sm font-medium mb-2">Attachments (Optional)</label>
                   
                   {/* Current Attachments */}
                   {editingResource.attachments && editingResource.attachments.length > 0 && (
@@ -365,12 +353,7 @@ const Resources = () => {
                           </div>
                           <button 
                             type="button" 
-                            onClick={() => {
-                              if (editingResource.attachments) {
-                                const updatedAttachments = editingResource.attachments.filter(att => att.id !== attachment.id);
-                                setEditingResource({...editingResource, attachments: updatedAttachments});
-                              }
-                            }}
+                            onClick={() => handleRemoveExistingAttachment(attachment.id)}
                             className="text-red-400 hover:text-red-300"
                           >
                             <X className="w-4 h-4" />
@@ -392,27 +375,7 @@ const Resources = () => {
                         type="file" 
                         multiple
                         className="hidden" 
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          
-                          if (files.length > 0) {
-                            setAttachments(prev => [...prev, ...files]);
-                            
-                            // Create and add preview URLs
-                            files.forEach(file => {
-                              if (file.type.startsWith('image/')) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setAttachmentPreviews(prev => [...prev, reader.result as string]);
-                                };
-                                reader.readAsDataURL(file);
-                              } else {
-                                // For non-image files, just add a placeholder
-                                setAttachmentPreviews(prev => [...prev, '']);
-                              }
-                            });
-                          }
-                        }}
+                        onChange={handleFileChange}
                       />
                     </label>
                   </div>
@@ -424,18 +387,12 @@ const Resources = () => {
                       {attachments.map((file, index) => (
                         <div key={index} className="flex items-center justify-between p-2 mb-1 bg-black/40 rounded">
                           <div className="flex items-center space-x-2">
-                            {file.type.startsWith('image/') ? <Image className="w-4 h-4 text-neon-pink" /> : 
-                             file.type.startsWith('video/') ? <Film className="w-4 h-4" /> :
-                             file.type.startsWith('audio/') ? <Music className="w-4 h-4" /> :
-                             <File className="w-4 h-4" />}
+                            {getFileIcon(file)}
                             <span className="text-sm truncate max-w-[200px]">{file.name}</span>
                           </div>
                           <button 
                             type="button" 
-                            onClick={() => {
-                              setAttachments(prev => prev.filter((_, i) => i !== index));
-                              setAttachmentPreviews(prev => prev.filter((_, i) => i !== index));
-                            }}
+                            onClick={() => handleRemoveAttachment(index)}
                             className="text-red-400 hover:text-red-300"
                           >
                             <X className="w-4 h-4" />
@@ -484,50 +441,48 @@ const Resources = () => {
                       {resource.type}
                     </span>
                   </div>
-                  <p className="text-gray-300 text-sm mb-3 line-clamp-3">{resource.description}</p>
+                  <p className="text-gray-300 text-sm mb-3">{resource.description}</p>
                   
-                  {/* Attachments Preview */}
+                  {/* Attachments Display */}
                   {resource.attachments && resource.attachments.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-xs font-semibold text-gray-300">Attachments</span>
-                        <span className="text-xs bg-black/40 border border-white/10 rounded-full px-2 py-0.5">
-                          {resource.attachments.length}
-                        </span>
-                      </div>
-                      
-                      <div className="flex space-x-2 overflow-x-auto pb-2">
-                        {resource.attachments.filter(att => att.type === 'image').slice(0, 3).map((attachment, idx) => (
-                          <div 
-                            key={idx}
-                            className="w-14 h-14 flex-shrink-0 bg-black/40 rounded border border-white/10 overflow-hidden relative group"
-                            onClick={() => handlePreviewImage(attachment.url)}
-                          >
-                            <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <Eye className="w-6 h-6 text-neon-blue" />
+                    <div className="mb-3 max-h-40 overflow-y-auto p-2 border border-white/20 rounded-md">
+                      <h4 className="text-xs font-semibold mb-2 text-gray-300">Attachments</h4>
+                      {resource.attachments.map((attachment, idx) => (
+                        <div key={idx} className="mb-2 last:mb-0">
+                          {attachment.type === 'image' ? (
+                            <div className="relative group">
+                              <img 
+                                src={attachment.url} 
+                                alt={attachment.name}
+                                className="max-w-full h-auto rounded border border-white/10" 
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <a 
+                                  href={attachment.url} 
+                                  download={attachment.name}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 bg-black/60 rounded-full"
+                                >
+                                  <Download className="w-4 h-4 text-neon-blue" />
+                                </a>
+                              </div>
                             </div>
-                            <img 
-                              src={attachment.url} 
-                              alt={attachment.name}
-                              className="w-full h-full object-cover" 
-                            />
-                          </div>
-                        ))}
-                        
-                        {resource.attachments.length > 3 && (
-                          <div className="w-14 h-14 flex-shrink-0 bg-black/40 rounded border border-white/10 flex items-center justify-center">
-                            <span className="text-sm">+{resource.attachments.length - 3}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Comments count */}
-                  {resource.comments && resource.comments.length > 0 && (
-                    <div className="flex items-center text-gray-400 mb-3 text-xs">
-                      <MessageSquare className="w-3 h-3 mr-1" />
-                      {resource.comments.length} comment{resource.comments.length !== 1 ? 's' : ''}
+                          ) : (
+                            <a 
+                              href={attachment.url}
+                              download={attachment.name}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center p-2 bg-black/40 rounded hover:bg-black/60 transition-colors"
+                            >
+                              <FileText className="w-4 h-4 mr-2 text-neon-blue" />
+                              <span className="text-sm truncate flex-1">{attachment.name}</span>
+                              <Download className="w-4 h-4 text-gray-400" />
+                            </a>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                   
@@ -539,26 +494,34 @@ const Resources = () => {
                           <button 
                             onClick={() => handleEditResource(resource)}
                             className="p-1 text-gray-400 hover:text-neon-blue transition-colors"
-                            title="Edit resource"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button 
                             onClick={() => handleDeleteResource(resource.id)}
                             className="p-1 text-gray-400 hover:text-red-400 transition-colors"
-                            title="Delete resource"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </>
                       )}
                       <GlowingButton 
-                        color="cyan" 
+                        color={resource.type === 'PDF' ? 'pink' : (resource.type === 'Book' ? 'purple' : 'cyan')} 
                         className="text-xs py-1"
-                        onClick={() => handleViewResourceDetails(resource.id)}
                       >
-                        <LinkIcon className="w-3 h-3 mr-1" />
-                        View Details
+                        <a href={resource.link} className="flex items-center" target="_blank" rel="noopener noreferrer">
+                          {resource.type === 'PDF' || resource.type === 'Book' ? (
+                            <>
+                              <Download className="w-3 h-3 mr-1" />
+                              Download
+                            </>
+                          ) : (
+                            <>
+                              <LinkIcon className="w-3 h-3 mr-1" />
+                              View
+                            </>
+                          )}
+                        </a>
                       </GlowingButton>
                     </div>
                   </div>
@@ -579,34 +542,6 @@ const Resources = () => {
           )}
         </div>
       </div>
-      
-      {/* Image Preview Modal */}
-      {showImagePreview && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setShowImagePreview(null)}
-        >
-          <div className="max-w-4xl max-h-[90vh] relative">
-            <img 
-              src={showImagePreview} 
-              alt="Preview" 
-              className="max-w-full max-h-[90vh] object-contain"
-            />
-            <button 
-              className="absolute top-2 right-2 bg-black/60 rounded-full p-2 text-white hover:text-neon-blue"
-              onClick={(e) => {
-                e.stopPropagation();
-                const a = document.createElement('a');
-                a.href = showImagePreview;
-                a.download = 'image';
-                a.click();
-              }}
-            >
-              <Download className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 };
