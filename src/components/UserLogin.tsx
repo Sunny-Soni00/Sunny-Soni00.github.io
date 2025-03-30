@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import GlassCard from './GlassCard';
 import GlowingButton from './GlowingButton';
-import { User, Mail, LogIn } from 'lucide-react';
+import { User, Mail, LogIn, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 const UserLogin = () => {
-  const { setUserDetails } = useAuth();
+  const { setUserDetails, setShowUserLogin } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -27,14 +27,19 @@ const UserLogin = () => {
       email,
       visitDate: new Date().toISOString()
     });
-    
-    toast.success('Successfully logged in!');
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <GlassCard className="w-full max-w-md p-6">
-        <h2 className="text-2xl font-bold mb-2 text-center">User Login</h2>
+      <GlassCard className="w-full max-w-md p-6 relative">
+        <button 
+          onClick={() => setShowUserLogin(false)}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        
+        <h2 className="text-2xl font-bold mb-2 text-center">User Sign In</h2>
         <p className="text-gray-300 mb-6 text-center">
           Welcome to Sunny's Galaxy! Please enter your details to continue
         </p>
@@ -80,7 +85,7 @@ const UserLogin = () => {
           <div className="pt-4">
             <GlowingButton type="submit" className="w-full flex items-center justify-center">
               <LogIn className="w-4 h-4 mr-2" />
-              Continue
+              Sign In
             </GlowingButton>
           </div>
         </form>

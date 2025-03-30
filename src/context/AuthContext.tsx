@@ -9,13 +9,14 @@ type UserRole = 'user' | 'admin';
 interface AuthContextType {
   isAuthenticated: boolean;
   userRole: UserRole;
-  toggleRole: () => void;
   login: (userId: string, password: string) => boolean;
   logout: () => void;
   userDetails: UserDetails | null;
   setUserDetails: (details: Omit<UserDetails, 'id'>) => void;
   showUserLogin: boolean;
   setShowUserLogin: (show: boolean) => void;
+  showAdminLogin: boolean;
+  setShowAdminLogin: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,7 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Admin credentials
 const ADMIN_CREDENTIALS: AdminCredentials = {
   userId: "sunnysoni",
-  password: "*CosmicGalaxyAdmin"
+  password: "*SunnyGalaxyAdmin"
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -31,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [userDetails, setUserDetailsState] = useState<UserDetails | null>(null);
   const [showUserLogin, setShowUserLogin] = useState<boolean>(false);
+  const [showAdminLogin, setShowAdminLogin] = useState<boolean>(false);
 
   // Load auth state from localStorage on initial render
   useEffect(() => {
@@ -45,13 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userDetails = dataService.getUserDetailsById(savedUserDetailsId);
       if (userDetails) {
         setUserDetailsState(userDetails);
-      } else {
-        // If user details are not found, show the user login
-        setShowUserLogin(true);
       }
-    } else {
-      // If no user details are saved, show the user login on first visit
-      setShowUserLogin(true);
     }
   }, []);
 
@@ -64,12 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('currentUserDetailsId', userDetails.id);
     }
   }, [isAuthenticated, userRole, userDetails]);
-
-  const toggleRole = () => {
-    const newRole = userRole === 'user' ? 'admin' : 'user';
-    setUserRole(newRole);
-    toast.success(`Switched to ${newRole.toUpperCase()} mode`);
-  };
 
   const login = (userId: string, password: string) => {
     if (userId === ADMIN_CREDENTIALS.userId && password === ADMIN_CREDENTIALS.password) {
@@ -93,20 +83,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const savedDetails = dataService.addUserDetails(details);
     setUserDetailsState(savedDetails);
     setShowUserLogin(false);
-    toast.success('User details saved');
+    setIsAuthenticated(true);
+    toast.success('User details saved. You are now logged in!');
   };
 
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, 
       userRole, 
-      toggleRole, 
       login, 
       logout,
       userDetails,
       setUserDetails: saveUserDetails,
       showUserLogin,
-      setShowUserLogin
+      setShowUserLogin,
+      showAdminLogin,
+      setShowAdminLogin
     }}>
       {children}
     </AuthContext.Provider>

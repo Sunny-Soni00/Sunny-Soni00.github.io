@@ -14,13 +14,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import UserLogin from './components/UserLogin';
 import AdminLogin from './components/AdminLogin';
+import AuthButtons from './components/AuthButtons';
 
 import './App.css';
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
-  const { showUserLogin, isAuthenticated, userRole } = useAuth();
+  const { showUserLogin, showAdminLogin, isAuthenticated, userRole } = useAuth();
   
   return (
     <>
@@ -34,13 +35,13 @@ const AppRoutes = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       
+      <AuthButtons />
+      
       {/* User Login Modal */}
       {showUserLogin && <UserLogin />}
       
       {/* Admin Login Modal */}
-      {userRole === 'admin' && !isAuthenticated && window.location.pathname === "/admin" && (
-        <AdminLogin />
-      )}
+      {showAdminLogin && <AdminLogin />}
     </>
   );
 };

@@ -219,6 +219,7 @@ const initializeData = <T>(storageKey: string, initialData: T): T => {
       return initialData;
     }
   }
+  localStorage.setItem(storageKey, JSON.stringify(initialData));
   return initialData;
 };
 
@@ -248,7 +249,20 @@ class DataService {
       return project;
     });
     
+    // Update older resources that might not have attachments array
+    this.resources = this.resources.map(resource => {
+      if (!resource.attachments) {
+        return {
+          ...resource,
+          attachments: []
+        };
+      }
+      return resource;
+    });
+    
+    // Save updated projects and resources
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(this.projects));
+    localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));
   }
 
   // Projects Methods
@@ -336,7 +350,8 @@ class DataService {
   addResource(resource: Omit<Resource, 'id'>): Resource {
     const newResource = {
       ...resource,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      attachments: resource.attachments || []
     };
     this.resources = [...this.resources, newResource];
     localStorage.setItem(RESOURCES_STORAGE_KEY, JSON.stringify(this.resources));

@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import GlassCard from './GlassCard';
 import GlowingButton from './GlowingButton';
-import { User, Key, LogIn, UserCircle } from 'lucide-react';
+import { User, Key, LogIn, UserCircle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLogin = () => {
-  const { login } = useAuth();
+  const { login, setShowAdminLogin } = useAuth();
   const [name, setName] = useState('');
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -22,15 +22,24 @@ const AdminLogin = () => {
     }
     
     const success = login(userId, password);
-    if (!success) {
+    if (success) {
+      setShowAdminLogin(false);
+    } else {
       setError('Invalid credentials. Please try again.');
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <GlassCard className="w-full max-w-md p-6">
-        <h2 className="text-2xl font-bold mb-2 text-center">Admin Login</h2>
+      <GlassCard className="w-full max-w-md p-6 relative">
+        <button 
+          onClick={() => setShowAdminLogin(false)}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        
+        <h2 className="text-2xl font-bold mb-2 text-center">Admin Sign In</h2>
         <p className="text-gray-300 mb-6 text-center">
           Enter your credentials to access the admin dashboard
         </p>
@@ -93,7 +102,7 @@ const AdminLogin = () => {
           <div className="pt-4">
             <GlowingButton type="submit" className="w-full flex items-center justify-center">
               <LogIn className="w-4 h-4 mr-2" />
-              Login
+              Sign In
             </GlowingButton>
           </div>
         </form>
