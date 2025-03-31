@@ -208,8 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const comment = dataService.getCommentById(commentId);
-      if (comment && comment.likedBy?.includes(userDetails.id)) {
+      if (hasLikedComment(commentId)) {
         toast.error("You've already liked this comment");
         return false;
       }
@@ -285,10 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const comment = dataService.getCommentById(commentId);
-      const reply = comment?.replies?.find(r => r.id === replyId);
-      
-      if (reply && reply.likedBy?.includes(userDetails.id)) {
+      if (hasLikedReply(commentId, replyId)) {
         toast.error("You've already liked this reply");
         return false;
       }
@@ -330,6 +326,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setNameInputCallback(null);
     }
     setShowNamePopup(false);
+  };
+
+  const hasLikedComment = (commentId: string): boolean => {
+    if (!userDetails) return false;
+    
+    const comment = dataService.getCommentById(commentId);
+    return comment ? (comment.likedBy?.includes(userDetails.id) || false) : false;
+  };
+  
+  const hasLikedReply = (commentId: string, replyId: string): boolean => {
+    if (!userDetails) return false;
+    
+    const comment = dataService.getCommentById(commentId);
+    if (!comment || !comment.replies) return false;
+    
+    const reply = comment.replies.find(r => r.id === replyId);
+    return reply ? (reply.likedBy?.includes(userDetails.id) || false) : false;
   };
 
   return (

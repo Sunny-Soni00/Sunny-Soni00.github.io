@@ -49,7 +49,7 @@ const ResourceDetails = () => {
     }
     
     if (newCommentText.trim()) {
-      const newComment: Omit<Comment, 'id' | 'timestamp' | 'likes'> = {
+      const newComment: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'likedBy' | 'replies'> = {
         text: newCommentText,
         userName: userDetails?.name || 'Anonymous',
         resourceId: id,
